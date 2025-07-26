@@ -103,7 +103,34 @@ const wall1ShadowTexture = textureLoader.load(
     }
 );
 
-
+const wall2ShadowTexture = textureLoader.load(
+    '/textures/ShadowBake/wall2Shadow.png',
+    // onLoad callback
+    function(texture) {
+        console.log('✅ Texture loaded successfully!');
+        console.log('Texture object:', texture);
+        console.log('Image dimensions:', texture.image.width + 'x' + texture.image.height);
+        console.log('Texture UUID:', texture.uuid);
+        console.log('Image source:', texture.image.src);
+        
+        // Check if image actually loaded
+        if (texture.image.complete && texture.image.naturalWidth > 0) {
+            console.log('✅ Image data is valid');
+        } else {
+            console.error('❌ Image data is invalid or empty');
+        }
+    },
+    // onProgress callback
+    function(xhr) {
+        console.log('Loading texture: ' + (xhr.loaded / xhr.total * 100) + '%');
+    },
+    // onError callback
+    function(error) {
+        console.error('❌ Error loading texture:', error);
+        console.error('Failed to load: drawing-1.png');
+        console.error('Check if file exists and path is correct');
+    }
+);
 
 const uvTexture = textureLoader.load(
     '/textures/ShadowBake/uv_mapper.jpg',
@@ -144,7 +171,7 @@ const floorShadowMaterial = new THREE.MeshStandardMaterial({
   transparent: true,
 });
 
-const floorMaterial = new THREE.MeshBasicMaterial({
+const YellowMaterial = new THREE.MeshBasicMaterial({
   color: 0xFFFF00,
   side: THREE.DoubleSide, // Render both sides
 });
@@ -152,6 +179,14 @@ const floorMaterial = new THREE.MeshBasicMaterial({
 const wall1ShadowMaterial = new THREE.MeshStandardMaterial({
   color: 0x000000, // White color for the shadow
   alphaMap: wall1ShadowTexture, // Use the same texture for alpha
+  opacity: 1.0, // Set to 1 for full visibility
+  side: THREE.DoubleSide, // Render both sides
+  transparent: true,
+});
+
+const wall2ShadowMaterial = new THREE.MeshStandardMaterial({
+  color: 0x000000, // White color for the shadow
+  alphaMap: wall2ShadowTexture, // Use the same texture for alpha
   opacity: 1.0, // Set to 1 for full visibility
   side: THREE.DoubleSide, // Render both sides
   transparent: true,
@@ -196,7 +231,7 @@ loader.load(
     gltf.scene.position.set(0, .03, 0);
     gltf.scene.traverse( x => {
         if (x.isMesh){
-            x.material = floorMaterial;
+            x.material = YellowMaterial;
         }
     })
   },
@@ -243,7 +278,7 @@ loader.load(
     console.log('Model object:', gltf.scene);
         gltf.scene.traverse( x => {
         if (x.isMesh){
-            x.material = floorMaterial;
+            x.material = YellowMaterial;
         }
     })
   },
@@ -254,6 +289,51 @@ loader.load(
   }
 );
 
+loader.load(
+  'models/wall2.gltf', // Path relative to the public folder
+  function (gltf) {
+    scene.add(gltf.scene);
+    gltf.scene.position.set(7.94, 0, 0);
+    gltf.scene.scale.set(1, 1, 1);
+    gltf.scene.rotation.set(0, Math.PI, 0); // Rotate to face the camera
+    console.log('Wall1 model loaded successfully');
+    console.log('Model object:', gltf.scene);
+        gltf.scene.traverse( x => {
+        if (x.isMesh){
+            x.material = wall2ShadowMaterial;
+        }
+    })
+  },
+
+  undefined, // onProgress
+  function (error) {
+    console.error('An error happened', error);
+  }
+);
+
+
+
+loader.load(
+  'models/wall2.gltf', // Path relative to the public folder
+  function (gltf) {
+    scene.add(gltf.scene);
+    gltf.scene.position.set(7.943, 0, 0);
+    gltf.scene.scale.set(1, 1, 1);
+    gltf.scene.rotation.set(0, Math.PI, 0); // Rotate to face the camera
+    console.log('Wall1 model loaded successfully');
+    console.log('Model object:', gltf.scene);
+        gltf.scene.traverse( x => {
+        if (x.isMesh){
+            x.material = YellowMaterial;
+        }
+    })
+  },
+
+  undefined, // onProgress
+  function (error) {
+    console.error('An error happened', error);
+  }
+);
 
 
 // === Animation Loop ===
