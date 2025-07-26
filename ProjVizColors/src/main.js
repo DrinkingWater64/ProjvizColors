@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import * as dat from 'dat.gui';
 import { ACESFilmicToneMapping } from 'three';
 
 const scene = new THREE.Scene();
@@ -163,6 +164,36 @@ const wall3ShadowTexture = textureLoader.load(
 );
 
 
+const wall4ShadowTexture = textureLoader.load(
+    '/textures/ShadowBake/Wall45Shadow.png',
+    // onLoad callback
+    function(texture) {
+        console.log('✅ Texture loaded successfully!');
+        console.log('Texture object:', texture);
+        console.log('Image dimensions:', texture.image.width + 'x' + texture.image.height);
+        console.log('Texture UUID:', texture.uuid);
+        console.log('Image source:', texture.image.src);
+        
+        // Check if image actually loaded
+        if (texture.image.complete && texture.image.naturalWidth > 0) {
+            console.log('✅ Image data is valid');
+        } else {
+            console.error('❌ Image data is invalid or empty');
+        }
+    },
+    // onProgress callback
+    function(xhr) {
+        console.log('Loading texture: ' + (xhr.loaded / xhr.total * 100) + '%');
+    },
+    // onError callback
+    function(error) {
+        console.error('❌ Error loading texture:', error);
+        console.error('Failed to load: drawing-1.png');
+        console.error('Check if file exists and path is correct');
+    }
+);
+
+
 const uvTexture = textureLoader.load(
     '/textures/ShadowBake/uv_mapper.jpg',
     // onLoad callback
@@ -202,8 +233,10 @@ const floorShadowMaterial = new THREE.MeshStandardMaterial({
   transparent: true,
 });
 
-const YellowMaterial = new THREE.MeshBasicMaterial({
+const YellowMaterial = new THREE.MeshStandardMaterial({
   color: 0xFFFF00,
+  roughness: 0.8, // Adjust roughness for better appearance
+  metalness: 0.1, // Adjust metalness for better appearance
   side: THREE.DoubleSide, // Render both sides
 });
 
@@ -231,10 +264,19 @@ const wall2ShadowMaterial = new THREE.MeshStandardMaterial({
 const wall3ShadowMaterial = new THREE.MeshStandardMaterial({
   color: 0x000000, // White color for the shadow
   alphaMap: wall3ShadowTexture, // Use the same texture for alpha
-  opacity: 1.0, // Set to 1 for full visibility
+  opacity: .4, // Set to 1 for full visibility
   side: THREE.DoubleSide, // Render both sides
   transparent: true,
 });
+
+const wall4ShadowMaterial = new THREE.MeshStandardMaterial({
+  color: 0x000000, // White color for the shadow
+  alphaMap: wall4ShadowTexture, // Use the same texture for alpha
+  opacity: .4, // Set to 1 for full visibility
+  side: THREE.DoubleSide, // Render both sides
+  transparent: true,
+});
+
 
 // === Load GLTF Model ===
 const loader = new GLTFLoader();
@@ -427,6 +469,51 @@ loader.load(
 );
 
 
+loader.load(
+  'models/wall4.gltf', // Path relative to the public folder
+  function (gltf) {
+    scene.add(gltf.scene);
+    gltf.scene.position.set( 0, 0, 0);
+    gltf.scene.scale.set(1, 1, 1);
+    gltf.scene.rotation.set(0, 0, 0); // Rotate to face the camera
+    console.log('Wall3 model loaded successfully');
+    console.log('Model object:', gltf.scene);
+        gltf.scene.traverse( x => {
+        if (x.isMesh){
+            x.material = wall4ShadowMaterial;
+        }
+    })
+  },
+
+  undefined, // onProgress
+  function (error) {
+    console.error('An error happened', error);
+  }
+);
+
+loader.load(
+  'models/wall4.gltf', // Path relative to the public folder
+  function (gltf) {
+    scene.add(gltf.scene);
+    gltf.scene.position.set( 0, 0, -0.01);
+    gltf.scene.scale.set(1, 1, 1);
+    gltf.scene.rotation.set(0, 0, 0); // Rotate to face the camera
+    console.log('Wall3 model loaded successfully');
+    console.log('Model object:', gltf.scene);
+        gltf.scene.traverse( x => {
+        if (x.isMesh){
+            x.material = YellowMaterial;
+        }
+    })
+  },
+
+  undefined, // onProgress
+  function (error) {
+    console.error('An error happened', error);
+  }
+);
+
+
 // === Animation Loop ===
 function animate() {
     requestAnimationFrame(animate);
@@ -442,6 +529,49 @@ window.addEventListener( 'resize', () => {
     camera.updateProjectionMatrix();
     renderer.setSize( window.innerWidth, window.innerHeight );
 });
+
+
+
+
+
+
+
+
+
+const settings = {
+  yellowMaterial: 0xFFFF00,
+  redMaterial: 0xFF0000,
+  shadowOpacity: 0.5
+};
+
+// Create GUI
+const gui = new dat.GUI({ width: 300 });
+
+// Materials folder
+const materialsFolder = gui.addFolder('Materials');
+
+// Add color controllers
+materialsFolder.addColor(settings, 'yellowMaterial').name('Yellow Color').onChange(function(value) {
+  YellowMaterial.color.set(value);
+});
+
+materialsFolder.addColor(settings, 'redMaterial').name('Red Color').onChange(function(value) {
+  RedwMaterial.color.set(value);
+});
+
+// Shadows folder
+const shadowsFolder = gui.addFolder('Shadows');
+
+// Add opacity controller for floor shadow
+shadowsFolder.add(settings, 'shadowOpacity', 0, 1, 0.01).name('Floor Shadow Opacity').onChange(function(value) {
+  floorShadowMaterial.opacity = value;
+});
+
+// Open folders
+materialsFolder.open();
+shadowsFolder.open();
+
+
 
 
 // === Assign Shadow Texture to Model ===
