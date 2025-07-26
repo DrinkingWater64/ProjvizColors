@@ -125,15 +125,77 @@ const wallDisplacement = textureLoader.load(
     onTextureError
 );
 
-const textures = [wallDisplacement,wallAo, wallroughness, wallnormal,walldiffuse];
-const setTextureTiling = (repeatX = 4, repeatY = 2) => {
-  textures.forEach(texture => {
+const wallTextures = [wallDisplacement,wallAo, wallroughness, wallnormal,walldiffuse];
+const setWallTextureTiling = (repeatX = 4, repeatY = 2) => {
+  wallTextures.forEach(texture => {
     texture.repeat.set(repeatX, repeatY);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
   });
 };
-setTextureTiling();
+setWallTextureTiling();
+
+
+
+//  floor material setup
+const floorDiffuse = textureLoader.load(
+    '/floor/diagonal_parquet_diff_1k.png',
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
+);
+
+const floorNormal = textureLoader.load(
+    '/floor/diagonal_parquet_nor_gl_1k.png',
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
+);
+
+const floorRoughness = textureLoader.load(
+    '/floor/diagonal_parquet_rough_1k.png',
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
+);
+
+const floorDisplacement = textureLoader.load(
+    '/floor/diagonal_parquet_disp_1k.png',
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
+);
+
+const floorAo = textureLoader.load(
+    '/floor/diagonal_parquet_ao_1k.png',
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
+);
+
+const floorTextures = [floorDiffuse, floorNormal, floorRoughness, floorDisplacement, floorAo];
+const setFloorTextureTiling = (repeatX = 4, repeatY = 2) => {
+  floorTextures.forEach(texture => {
+    texture.repeat.set(repeatX, repeatY);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+  });
+};
+setFloorTextureTiling(4, 2); // Set initial tiling values
+
+// === Floor Material ===
+const floorMaterial = new THREE.MeshStandardMaterial({
+  map: floorDiffuse,
+  normalMap: floorNormal,
+  roughnessMap: floorRoughness,
+  displacementMap: floorDisplacement,
+  aoMap: floorAo,
+  displacementScale: 0.01, // Adjust as needed
+  aoMapIntensity: 1.0, // Adjust ambient occlusion intensity
+  roughness: 0.8, // Adjust roughness for better appearance
+  metalness: 0.1, // Adjust metalness for better appearance
+  side: THREE.DoubleSide, // Render both sides
+}); 
 
 
 // === Materials ===
@@ -246,7 +308,7 @@ loader.load(
     gltf.scene.position.set(0, .025, 0);
     gltf.scene.traverse( x => {
         if (x.isMesh){
-            x.material = wallMaterial;
+            x.material = floorMaterial;
         }
     })
   },
@@ -509,13 +571,13 @@ const tilingFolder = gui.addFolder('Wall Textures');
 
 tilingFolder.add(tilingSettings, 'repeatX', 1, 20, 0.5).name('Horizontal Tiles').onChange(value => {
   if (!tilingSettings.autoTile) {
-    setTextureTiling(value, tilingSettings.repeatY);
+    setWallTextureTiling(value, tilingSettings.repeatY);
   }
 });
 
 tilingFolder.add(tilingSettings, 'repeatY', 1, 20, 0.5).name('Vertical Tiles').onChange(value => {
   if (!tilingSettings.autoTile) {
-    setTextureTiling(tilingSettings.repeatX, value);
+    setWallTextureTiling(tilingSettings.repeatX, value);
   }
 });
 
@@ -547,7 +609,7 @@ function setupWallTextureTiling(wallMesh, tilesPerMeter = 1) {
   const repeatY = Math.max(1, Math.round(size.y * tilesPerMeter));
   
   // Apply to textures
-  setTextureTiling(repeatX, repeatY);
+  setWallTextureTiling(repeatX, repeatY);
   
   // Update the UI
   tilingSettings.repeatX = repeatX;
