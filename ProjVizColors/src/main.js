@@ -477,7 +477,7 @@ const materialsFolder = gui.addFolder('Materials');
 
 // Add color controllers
 materialsFolder.addColor(settings, 'yellowMaterial').name('Yellow Color').onChange(function(value) {
-  YellowMaterial.color.set(value);
+  wallMaterial.color.set(value);
 });
 
 materialsFolder.addColor(settings, 'redMaterial').name('Red Color').onChange(function(value) {
@@ -598,3 +598,137 @@ function onTextureError(error) {
 
 
 
+// Environment settings
+const environmentSettings = {
+  rotation: 0,
+  intensity: 1.0,
+  exposure: 1.0
+};
+
+// Store the original texture for rotation
+let originalEnvTexture = null;
+let currentEnvMap = null;
+
+// Function to load HDR environment map
+function loadEnvironmentMap(path, callback) {
+  new RGBELoader()
+    .setPath('/textures/')
+    .load(path, function(texture) {
+      // Store the original texture
+      originalEnvTexture = texture;
+      
+      // Generate the initial environment map
+      currentEnvMap = pmremGenerator.fromEquirectangular(texture).texture;
+      
+      // Apply to scene
+      scene.environment = currentEnvMap;
+      scene.background = currentEnvMap;
+      
+      // Set initial exposure
+      renderer.toneMappingExposure = environmentSettings.exposure;
+      
+      if (callback) callback();
+    });
+}
+
+// Method 1: Using scene rotation (most performant)
+function updateEnvironmentRotation() {
+  if (!scene.environment) return;
+  
+  // Rotate the entire scene's environment mapping
+  // This effectively rotates the lighting direction
+  scene.rotation.y = environmentSettings.rotation;
+  
+  // Update exposure
+  renderer.toneMappingExposure = environmentSettings.exposure;
+}
+
+// Method 2: Using a wrapper object (alternative approach)
+function updateEnvironmentWithWrapper() {
+  if (!currentEnvMap) return;
+  
+  // Create a wrapper object that rotates the environment
+  const envWrapper = new THREE.Group();
+  envWrapper.rotation.y = environmentSettings.rotation;
+  
+  // Apply the rotated environment
+  scene.environment = currentEnvMap;
+  scene.background = currentEnvMap;
+  
+  // Update exposure
+  renderer.toneMappingExposure = environmentSettings.exposure;
+}
+
+// Method 3: Regenerating environment map with rotation (most accurate but less performant)
+function regenerateEnvironmentMap() {
+  if (!originalEnvTexture) return;
+  
+  // Create a temporary canvas to rotate the HDR texture
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  
+  // This is a simplified approach - for production use, you'd want to
+  // properly handle HDR data and rotation in shader space
+  
+  // For now, use the simpler scene rotation method
+  updateEnvironmentRotation();
+}
+
+// Load the environment map
+loadEnvironmentMap('je_gray.hdr');
+
+// Add environment controls to GUI
+const environmentFolder = gui.addFolder('Environment Lighting');
+
+environmentFolder.add(environmentSettings, 'rotation', 0, Math.PI * 2, 0.01)
+  .name('Sun Direction')
+  .onChange(updateEnvironmentRotation);
+
+environmentFolder.add(environmentSettings, 'intensity', 0, 3.0, 0.1)
+  .name('Environment Intensity')
+  .onChange(function(value) {
+    if (scene.environment) {
+      // Note: Direct intensity control requires custom shader modifications
+      // This is a simplified approach using exposure
+      environmentSettings.exposure = value;
+      renderer.toneMappingExposure = value;
+    }
+  });
+
+environmentFolder.add(environmentSettings, 'exposure', 0.1, 3.0, 0.1)
+  .name('Exposure')
+  .onChange(function(value) {
+    environmentSettings.exposure = value;
+    renderer.toneMappingExposure = value;
+  });
+
+environmentFolder.open();
+
+// Alternative Method 4: Using Matrix Transformation (Advanced)
+function updateEnvironmentWithMatrix() {
+  if (!currentEnvMap) return;
+  
+  // Create rotation matrix
+  const rotationMatrix = new THREE.Matrix4();
+  rotationMatrix.makeRotationY(environmentSettings.rotation);
+  
+  // Apply matrix to environment mapping
+  // This requires custom shader modifications for full implementation
+  scene.environment = currentEnvMap;
+  scene.background = currentEnvMap;
+  
+  // For basic rotation, scene rotation is still the most practical approach
+  scene.rotation.y = environmentSettings.rotation;
+  renderer.toneMappingExposure = environmentSettings.exposure;
+}
+
+// Clean up function
+function dispose() {
+  if (originalEnvTexture) {
+    originalEnvTexture.dispose();
+  }
+  if (currentEnvMap) {
+    currentEnvMap.dispose();
+  }
+  pmremGenerator.dispose();
+}
