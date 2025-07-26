@@ -40,6 +40,8 @@ texture.dispose();
 pmremGenerator.dispose();
 });
 
+
+
 // === Load Shadow Texture ===
 // === Comprehensive Texture Debugging ===
 const textureLoader = new THREE.TextureLoader();
@@ -47,181 +49,107 @@ const textureLoader = new THREE.TextureLoader();
 // 1. Basic texture loading with all callbacks
 const floorShadowTexture = textureLoader.load(
     '/textures/ShadowBake/FloorShadowTextureInvert.png',
-    // onLoad callback
-    function(texture) {
-        console.log('✅ Texture loaded successfully!');
-        console.log('Texture object:', texture);
-        console.log('Image dimensions:', texture.image.width + 'x' + texture.image.height);
-        console.log('Texture UUID:', texture.uuid);
-        console.log('Image source:', texture.image.src);
-        
-        // Check if image actually loaded
-        if (texture.image.complete && texture.image.naturalWidth > 0) {
-            console.log('✅ Image data is valid');
-        } else {
-            console.error('❌ Image data is invalid or empty');
-        }
-    },
-    // onProgress callback
-    function(xhr) {
-        console.log('Loading texture: ' + (xhr.loaded / xhr.total * 100) + '%');
-    },
-    // onError callback
-    function(error) {
-        console.error('❌ Error loading texture:', error);
-        console.error('Failed to load: drawing-1.png');
-        console.error('Check if file exists and path is correct');
-    }
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
 );
-
 
 const wall1ShadowTexture = textureLoader.load(
     '/textures/ShadowBake/wall1ShadowInvert.png',
-    // onLoad callback
-    function(texture) {
-        console.log('✅ Texture loaded successfully!');
-        console.log('Texture object:', texture);
-        console.log('Image dimensions:', texture.image.width + 'x' + texture.image.height);
-        console.log('Texture UUID:', texture.uuid);
-        console.log('Image source:', texture.image.src);
-        
-        // Check if image actually loaded
-        if (texture.image.complete && texture.image.naturalWidth > 0) {
-            console.log('✅ Image data is valid');
-        } else {
-            console.error('❌ Image data is invalid or empty');
-        }
-    },
-    // onProgress callback
-    function(xhr) {
-        console.log('Loading texture: ' + (xhr.loaded / xhr.total * 100) + '%');
-    },
-    // onError callback
-    function(error) {
-        console.error('❌ Error loading texture:', error);
-        console.error('Failed to load: drawing-1.png');
-        console.error('Check if file exists and path is correct');
-    }
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
 );
 
 const wall2ShadowTexture = textureLoader.load(
     '/textures/ShadowBake/wall2Shadow.png',
-    // onLoad callback
-    function(texture) {
-        console.log('✅ Texture loaded successfully!');
-        console.log('Texture object:', texture);
-        console.log('Image dimensions:', texture.image.width + 'x' + texture.image.height);
-        console.log('Texture UUID:', texture.uuid);
-        console.log('Image source:', texture.image.src);
-        
-        // Check if image actually loaded
-        if (texture.image.complete && texture.image.naturalWidth > 0) {
-            console.log('✅ Image data is valid');
-        } else {
-            console.error('❌ Image data is invalid or empty');
-        }
-    },
-    // onProgress callback
-    function(xhr) {
-        console.log('Loading texture: ' + (xhr.loaded / xhr.total * 100) + '%');
-    },
-    // onError callback
-    function(error) {
-        console.error('❌ Error loading texture:', error);
-        console.error('Failed to load: drawing-1.png');
-        console.error('Check if file exists and path is correct');
-    }
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
 );
-
 
 const wall3ShadowTexture = textureLoader.load(
     '/textures/ShadowBake/wall3ShadowInvert.png',
-    // onLoad callback
-    function(texture) {
-        console.log('✅ Texture loaded successfully!');
-        console.log('Texture object:', texture);
-        console.log('Image dimensions:', texture.image.width + 'x' + texture.image.height);
-        console.log('Texture UUID:', texture.uuid);
-        console.log('Image source:', texture.image.src);
-        
-        // Check if image actually loaded
-        if (texture.image.complete && texture.image.naturalWidth > 0) {
-            console.log('✅ Image data is valid');
-        } else {
-            console.error('❌ Image data is invalid or empty');
-        }
-    },
-    // onProgress callback
-    function(xhr) {
-        console.log('Loading texture: ' + (xhr.loaded / xhr.total * 100) + '%');
-    },
-    // onError callback
-    function(error) {
-        console.error('❌ Error loading texture:', error);
-        console.error('Failed to load: drawing-1.png');
-        console.error('Check if file exists and path is correct');
-    }
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
 );
-
 
 const wall4ShadowTexture = textureLoader.load(
     '/textures/ShadowBake/Wall45Shadow.png',
-    // onLoad callback
-    function(texture) {
-        console.log('✅ Texture loaded successfully!');
-        console.log('Texture object:', texture);
-        console.log('Image dimensions:', texture.image.width + 'x' + texture.image.height);
-        console.log('Texture UUID:', texture.uuid);
-        console.log('Image source:', texture.image.src);
-        
-        // Check if image actually loaded
-        if (texture.image.complete && texture.image.naturalWidth > 0) {
-            console.log('✅ Image data is valid');
-        } else {
-            console.error('❌ Image data is invalid or empty');
-        }
-    },
-    // onProgress callback
-    function(xhr) {
-        console.log('Loading texture: ' + (xhr.loaded / xhr.total * 100) + '%');
-    },
-    // onError callback
-    function(error) {
-        console.error('❌ Error loading texture:', error);
-        console.error('Failed to load: drawing-1.png');
-        console.error('Check if file exists and path is correct');
-    }
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
 );
-
 
 const uvTexture = textureLoader.load(
     '/textures/ShadowBake/uv_mapper.jpg',
-    // onLoad callback
-    function(texture) {
-        console.log('✅ Texture loaded successfully!');
-        console.log('Texture object:', texture);
-        console.log('Image dimensions:', texture.image.width + 'x' + texture.image.height);
-        console.log('Texture UUID:', texture.uuid);
-        console.log('Image source:', texture.image.src);
-        
-        // Check if image actually loaded
-        if (texture.image.complete && texture.image.naturalWidth > 0) {
-            console.log('✅ Image data is valid');
-        } else {
-            console.error('❌ Image data is invalid or empty');
-        }
-    },
-    // onProgress callback
-    function(xhr) {
-        console.log('Loading texture: ' + (xhr.loaded / xhr.total * 100) + '%');
-    },
-    // onError callback
-    function(error) {
-        console.error('❌ Error loading texture:', error);
-        console.error('Failed to load: drawing-1.png');
-        console.error('Check if file exists and path is correct');
-    }
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
 );
+
+// wall textures
+const walldiffuse = textureLoader.load(
+    '/beige_wall/textures/beige_wall_001_diff_1k.jpg',
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
+); 
+
+const wallnormal = textureLoader.load(
+    '/beige_wall/textures/beige_wall_001_nor_gl_1k.jpg',
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
+); 
+
+const wallroughness = textureLoader.load(
+    '/beige_wall/textures/beige_wall_001_rough_1k.jpg',
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
+);
+
+const wallAo = textureLoader.load(
+    '/beige_wall/textures/beige_wall_001_ao_1k.jpg',
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
+);
+
+const wallDisplacement = textureLoader.load(
+    '/beige_wall/textures/beige_wall_001_disp_1k.jpg',
+    onTextureLoad,
+    onTextureProgress,
+    onTextureError
+);
+
+const textures = [wallDisplacement,wallAo, wallroughness, wallnormal,walldiffuse];
+const setTextureTiling = (repeatX = 4, repeatY = 2) => {
+  textures.forEach(texture => {
+    texture.repeat.set(repeatX, repeatY);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+  });
+};
+setTextureTiling();
+
+
+// === Materials ===
+
+const wallMaterial = new THREE.MeshStandardMaterial({
+  map: walldiffuse,
+  normalMap: wallnormal,
+  roughnessMap: wallroughness,
+  aoMap: wallAo,
+  displacementMap: wallDisplacement,
+  displacementScale: 0.01, // Adjust as needed
+  aoMapIntensity: 1.0, // Adjust ambient occlusion intensity
+  roughness: 0.8, // Adjust roughness for better appearance
+  metalness: 0.1, // Adjust metalness for better appearance
+  side: THREE.DoubleSide, // Render both sides
+});
 
 
 
@@ -310,14 +238,15 @@ loader.load(
   }
 );
 
+// === Floor Model ===
 loader.load(
   'models/floorShadow.glb', // Path relative to the public folder
   function (gltf) {
     scene.add(gltf.scene);
-    gltf.scene.position.set(0, .03, 0);
+    gltf.scene.position.set(0, .025, 0);
     gltf.scene.traverse( x => {
         if (x.isMesh){
-            x.material = YellowMaterial;
+            x.material = wallMaterial;
         }
     })
   },
@@ -364,7 +293,7 @@ loader.load(
     console.log('Model object:', gltf.scene);
         gltf.scene.traverse( x => {
         if (x.isMesh){
-            x.material = YellowMaterial;
+            x.material = wallMaterial;
         }
     })
   },
@@ -410,7 +339,7 @@ loader.load(
     console.log('Model object:', gltf.scene);
         gltf.scene.traverse( x => {
         if (x.isMesh){
-            x.material = YellowMaterial;
+            x.material = wallMaterial;
         }
     })
   },
@@ -450,14 +379,14 @@ loader.load(
   'models/wall3.gltf', // Path relative to the public folder
   function (gltf) {
     scene.add(gltf.scene);
-    gltf.scene.position.set( -11.655, 0, 0);
+    gltf.scene.position.set( -11.66, 0, 0);
     gltf.scene.scale.set(1, 1, 1);
     gltf.scene.rotation.set(0, Math.PI, 0); // Rotate to face the camera
     console.log('Wall3 model loaded successfully');
     console.log('Model object:', gltf.scene);
         gltf.scene.traverse( x => {
         if (x.isMesh){
-            x.material = YellowMaterial;
+            x.material = wallMaterial;
         }
     })
   },
@@ -502,7 +431,7 @@ loader.load(
     console.log('Model object:', gltf.scene);
         gltf.scene.traverse( x => {
         if (x.isMesh){
-            x.material = YellowMaterial;
+            x.material = wallMaterial;
         }
     })
   },
@@ -533,11 +462,7 @@ window.addEventListener( 'resize', () => {
 
 
 
-
-
-
-
-
+// === GUI Setup ===
 const settings = {
   yellowMaterial: 0xFFFF00,
   redMaterial: 0xFF0000,
@@ -572,6 +497,63 @@ materialsFolder.open();
 shadowsFolder.open();
 
 
+// Add to GUI
+const tilingSettings = {
+  repeatX: 4,
+  repeatY: 2,
+  autoTile: true,
+  tilesPerMeter: 1
+};
+
+const tilingFolder = gui.addFolder('Wall Textures');
+
+tilingFolder.add(tilingSettings, 'repeatX', 1, 20, 0.5).name('Horizontal Tiles').onChange(value => {
+  if (!tilingSettings.autoTile) {
+    setTextureTiling(value, tilingSettings.repeatY);
+  }
+});
+
+tilingFolder.add(tilingSettings, 'repeatY', 1, 20, 0.5).name('Vertical Tiles').onChange(value => {
+  if (!tilingSettings.autoTile) {
+    setTextureTiling(tilingSettings.repeatX, value);
+  }
+});
+
+tilingFolder.add(tilingSettings, 'autoTile').name('Auto-Tile Based on Size');
+tilingFolder.add(tilingSettings, 'tilesPerMeter', 0.1, 5, 0.1).name('Tiles Per Meter').onChange(value => {
+  if (tilingSettings.autoTile) {
+    // Re-apply auto tiling to all wall meshes
+    scene.traverse(object => {
+      if (object.isMesh && object.material === wallMaterial) {
+        setupWallTextureTiling(object, value);
+      }
+    });
+  }
+});
+
+tilingFolder.open();
+
+// Function to set up wall texture tiling based on wall dimensions
+function setupWallTextureTiling(wallMesh, tilesPerMeter = 1) {
+  if (!tilingSettings.autoTile) return;
+  
+  // Get the size of the wall
+  const bbox = new THREE.Box3().setFromObject(wallMesh);
+  const size = new THREE.Vector3();
+  bbox.getSize(size);
+  
+  // Calculate how many tiles to apply
+  const repeatX = Math.max(1, Math.round(size.x * tilesPerMeter));
+  const repeatY = Math.max(1, Math.round(size.y * tilesPerMeter));
+  
+  // Apply to textures
+  setTextureTiling(repeatX, repeatY);
+  
+  // Update the UI
+  tilingSettings.repeatX = repeatX;
+  tilingSettings.repeatY = repeatY;
+}
+
 
 
 // === Assign Shadow Texture to Model ===
@@ -584,3 +566,35 @@ function assignShadowTexture() {
         });
     }
 }
+
+
+// === Reusable Texture Load Callback ===
+function onTextureLoad(texture) {
+    console.log('✅ Texture loaded successfully!');
+    console.log('Texture object:', texture);
+    console.log('Image dimensions:', texture.image.width + 'x' + texture.image.height);
+    console.log('Texture UUID:', texture.uuid);
+    console.log('Image source:', texture.image.src);
+
+    // Check if image actually loaded
+    if (texture.image.complete && texture.image.naturalWidth > 0) {
+        console.log('✅ Image data is valid');
+    } else {
+        console.error('❌ Image data is invalid or empty');
+    }
+}
+
+// === Reusable Progress Callback ===
+function onTextureProgress(xhr) {
+    console.log('Loading texture: ' + (xhr.loaded / xhr.total * 100) + '%');
+}
+
+// === Reusable Error Callback ===
+function onTextureError(error) {
+    console.error('❌ Error loading texture:', error);
+    console.error('Failed to load: drawing-1.png');
+    console.error('Check if file exists and path is correct');
+}
+
+
+
