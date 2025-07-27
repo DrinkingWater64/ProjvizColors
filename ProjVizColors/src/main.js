@@ -5,6 +5,12 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RectAreaLightHelper } from 'three/addons/helpers/RectAreaLightHelper.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import * as dat from 'dat.gui';
+
+// ssr
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { SSRPass } from 'three/examples/jsm/postprocessing/SSRPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { ReflectorForSSRPass } from 'three/examples/jsm/objects/ReflectorForSSRPass.js';
 import { ACESFilmicToneMapping } from 'three';
 
 const scene = new THREE.Scene();
@@ -21,13 +27,8 @@ document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; // Optional, for smooth interaction
 
-// Example: add a sphere to see reflections
-const geometry = new THREE.SphereGeometry(1, 32, 32);
-const material = new THREE.MeshStandardMaterial({ metalness: 1, roughness: 0 });
-const mesh = new THREE.Mesh(geometry, material);
-scene.add(mesh);
-
-camera.position.z = 5;
+camera.position.set(5, 2, 5);
+camera.lookAt(0, 0, 0);
 
 // === HDR Environment Map ===
 const pmremGenerator = new THREE.PMREMGenerator(renderer);
@@ -43,6 +44,71 @@ scene.background = envMap;
 texture.dispose();
 pmremGenerator.dispose();
 });
+
+
+
+// === Post-processing Setup ===
+const composer = new EffectComposer(renderer);
+
+// Create SSR pass
+const ssrPass = new SSRPass({
+    renderer,
+    scene,
+    camera,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    groundReflector: null, // We'll set this up if needed
+    selects: [] // Objects to reflect
+});
+
+// Configure SSR settings
+ssrPass.thickness = 0.018;
+ssrPass.infiniteThick = false;
+ssrPass.maxDistance = 2;
+ssrPass.opacity = 1;
+ssrPass.fresnel = true;
+ssrPass.distanceAttenuation = true;
+ssrPass.bouncing = true;
+ssrPass.blur = true;
+
+
+// === Ground Reflector for SSR ===
+const groundReflector = new ReflectorForSSRPass(
+    new THREE.PlaneGeometry(30, 30),
+    {
+        clipBias: 0.0003,
+        textureWidth: window.innerWidth,
+        textureHeight: window.innerHeight,
+        color: 0x888888,
+        useDepthTexture: true,
+    }
+);
+groundReflector.material.depthWrite = false;
+groundReflector.rotation.x = -Math.PI / 2;
+groundReflector.position.y = .04; // Slightly above your floor
+groundReflector.visible = true;
+scene.add(groundReflector);
+
+// Update SSR pass to use the reflector
+ssrPass.groundReflector = groundReflector;
+
+
+
+composer.addPass(ssrPass);
+composer.addPass(new OutputPass());
+
+
+
+var testbox = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+);
+testbox.position.set(0, 1, -4);
+scene.add(testbox);
+ssrPass.selects.push(testbox);
+
+
+
 
 // === Load Shadow Texture ===
 // === Comprehensive Texture Debugging ===
@@ -281,6 +347,7 @@ loader.load(
     gltf.scene.position.set(0, 0, 0);
     gltf.scene.traverse((child) => {
       if (child.isMesh) {
+        ssrPass.selects.push(child);
         // Handle both single material and array of materials
         const materials = Array.isArray(child.material) ? child.material : [child.material];
         materials.forEach((mat) => {
@@ -290,6 +357,9 @@ loader.load(
         });
       }
     });
+
+    console.log('Model loaded successfully#######################################################################################################');
+    console.log('Model object:', gltf.scene);
   },
 
   undefined, // onProgress
@@ -324,6 +394,7 @@ loader.load(
     gltf.scene.traverse( x => {
         if (x.isMesh){
             x.material = floorMaterial;
+            ssrPass.selects.push(x)
         }
     })
   },
@@ -371,6 +442,7 @@ loader.load(
         gltf.scene.traverse( x => {
         if (x.isMesh){
             x.material = wallMaterial;
+            ssrPass.selects.push(x)
         }
     })
   },
@@ -417,6 +489,7 @@ loader.load(
         gltf.scene.traverse( x => {
         if (x.isMesh){
             x.material = wallMaterial;
+            ssrPass.selects.push(x)
         }
     })
   },
@@ -464,6 +537,7 @@ loader.load(
         gltf.scene.traverse( x => {
         if (x.isMesh){
             x.material = wallMaterial;
+            ssrPass.selects.push(x)
         }
     })
   },
@@ -509,6 +583,7 @@ loader.load(
         gltf.scene.traverse( x => {
         if (x.isMesh){
             x.material = wallMaterial;
+            ssrPass.selects.push(x)
         }
     })
   },
@@ -529,6 +604,14 @@ window.addEventListener( 'resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize( window.innerWidth, window.innerHeight );
+
+        // Update composer size
+    composer.setSize(window.innerWidth, window.innerHeight);
+
+        if (groundReflector) {
+        groundReflector.getRenderTarget().setSize(window.innerWidth, window.innerHeight);
+        groundReflector.resolution.set(window.innerWidth, window.innerHeight);
+    }
 });
 
 
@@ -834,11 +917,81 @@ lightingFolder.open();
 ambientFolder.open();
 
 
+
+
+
+// ssr
+
+// === SSR Settings for GUI ===
+const ssrSettings = {
+    enableSSR: true,
+    thickness: 0.018,
+    maxDistance: 2,
+    opacity: 1,
+    blur: true,
+    fresnel: true,
+    bouncing: true,
+    showReflector: true,
+    output: SSRPass.OUTPUT.Default
+};
+
+// Add SSR folder to GUI
+const ssrFolder = gui.addFolder('Screen Space Reflections');
+
+ssrFolder.add(ssrSettings, 'enableSSR').name('Enable SSR').onChange(value => {
+    ssrPass.enabled = value;
+});
+
+ssrFolder.add(ssrSettings, 'thickness', 0, 0.1, 0.0001).name('Thickness').onChange(value => {
+    ssrPass.thickness = value;
+});
+
+ssrFolder.add(ssrSettings, 'maxDistance', 0, 10, 0.001).name('Max Distance').onChange(value => {
+    ssrPass.maxDistance = value;
+    if (groundReflector) groundReflector.maxDistance = value;
+});
+
+ssrFolder.add(ssrSettings, 'opacity', 0, 1, 0.01).name('Opacity').onChange(value => {
+    ssrPass.opacity = value;
+    if (groundReflector) groundReflector.opacity = value;
+});
+
+ssrFolder.add(ssrSettings, 'blur').name('Blur').onChange(value => {
+    ssrPass.blur = value;
+});
+
+ssrFolder.add(ssrSettings, 'fresnel').name('Fresnel').onChange(value => {
+    ssrPass.fresnel = value;
+    if (groundReflector) groundReflector.fresnel = value;
+});
+
+ssrFolder.add(ssrSettings, 'bouncing').name('Bouncing').onChange(value => {
+    ssrPass.bouncing = value;
+});
+
+ssrFolder.add(ssrSettings, 'showReflector').name('Show Reflector').onChange(value => {
+    if (groundReflector) groundReflector.visible = value;
+});
+
+ssrFolder.add(ssrSettings, 'output', {
+    'Default': SSRPass.OUTPUT.Default,
+    'SSR Only': SSRPass.OUTPUT.SSR,
+    'Beauty': SSRPass.OUTPUT.Beauty,
+    'Depth': SSRPass.OUTPUT.Depth,
+    'Normal': SSRPass.OUTPUT.Normal
+}).name('Output Mode').onChange(value => {
+    ssrPass.output = value;
+});
+
+ssrFolder.open();
+
+
 // === Animation Loop ===
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
-    renderer.render(scene, camera);
+
+    composer.render();
 }
 
 
