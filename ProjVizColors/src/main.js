@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { RectAreaLightHelper } from 'three/addons/helpers/RectAreaLightHelper.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import * as dat from 'dat.gui';
 import { ACESFilmicToneMapping } from 'three';
 
@@ -12,6 +14,8 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.physicallyCorrectLights = true;
+
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -39,6 +43,19 @@ scene.background = envMap;
 texture.dispose();
 pmremGenerator.dispose();
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -505,12 +522,7 @@ loader.load(
 );
 
 
-// === Animation Loop ===
-function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
-}
+
 
 animate();
 
@@ -662,9 +674,9 @@ function onTextureError(error) {
 
 // Environment settings
 const environmentSettings = {
-  rotation: 0,
-  intensity: 1.0,
-  exposure: 1.0
+  rotation: 3.26,
+  intensity: .2,
+  exposure: .2
 };
 
 // Store the original texture for rotation
@@ -793,4 +805,87 @@ function dispose() {
     currentEnvMap.dispose();
   }
   pmremGenerator.dispose();
+}
+
+
+
+//  light settings
+const lightSettings = {
+
+  // Ambient Light (Fill light)
+  ambientEnabled: true,
+  ambientIntensity: 0.3,
+  ambientColor: 0x404040,
+
+
+  // Rect Area Light (Key light)
+  rectEnabled: true,
+  rectIntensity: 1,
+  rectColor: 0xffffff,
+  rectWidth: 12,
+  rectHeight: 12,
+  rectX: 0,
+  rectY: 3,
+  rectZ: 0
+}
+
+// light inint
+
+const lights = {}
+
+lights.ambientLight = new THREE.AmbientLight(lightSettings.ambientColor, lightSettings.ambientIntensity);
+lights.ambientLight.visible = lightSettings.ambientEnabled;
+scene.add(lights.ambientLight);
+
+function updateAmbientLight() {
+  if (!lights.ambientLight) return;
+  
+  lights.ambientLight.visible = lightSettings.ambientEnabled;
+  lights.ambientLight.intensity = lightSettings.ambientIntensity;
+  lights.ambientLight.color.setHex(lightSettings.ambientColor);
+}
+
+
+// Rect Area Light (Key light)
+RectAreaLightUniformsLib.init();
+
+lights.rectLight = new THREE.RectAreaLight(
+  lightSettings.rectColor,
+  lightSettings.rectIntensity,
+  lightSettings.rectWidth,
+  lightSettings.rectHeight
+);
+lights.rectLight.position.set(lightSettings.rectX, lightSettings.rectY, lightSettings.rectZ);
+lights.rectLight.lookAt(0, 0, 0);
+lights.rectLight.visible = lightSettings.rectEnabled;
+scene.add(lights.rectLight);
+
+// Add helper
+const rectLightHelper = new RectAreaLightHelper(lights.rectLight);
+scene.add(rectLightHelper);
+// Make the helper more visible
+rectLightHelper.material.color.set(0xffff00); // Yellow
+rectLightHelper.material.transparent = true;
+rectLightHelper.material.opacity = 0.7;
+
+console.log('Rect Area Light Helper:', rectLightHelper);
+
+
+// light gui
+const lightingFolder = gui.addFolder('Additional Lighting');
+const ambientFolder = lightingFolder.addFolder('Ambient Light (Fill)');
+ambientFolder.add(lightSettings, 'ambientEnabled').name('Enable').onChange(updateAmbientLight);
+ambientFolder.add(lightSettings, 'ambientIntensity', 0, 10, 0.1).name('Intensity').onChange(updateAmbientLight);
+ambientFolder.addColor(lightSettings, 'ambientColor').name('Color').onChange(updateAmbientLight);
+
+
+lightingFolder.open();
+ambientFolder.open();
+
+
+// === Animation Loop ===
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
 }
