@@ -44,21 +44,6 @@ texture.dispose();
 pmremGenerator.dispose();
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // === Load Shadow Texture ===
 // === Comprehensive Texture Debugging ===
 const textureLoader = new THREE.TextureLoader();
@@ -211,7 +196,8 @@ const floorMaterial = new THREE.MeshStandardMaterial({
   aoMapIntensity: 1.0, // Adjust ambient occlusion intensity
   roughness: 0.8, // Adjust roughness for better appearance
   metalness: 0.1, // Adjust metalness for better appearance
-  side: THREE.DoubleSide, // Render both sides
+  side: THREE.DoubleSide, // Render both sides,
+  envMapIntensity: .01, // Adjust environment map intensity
 }); 
 
 
@@ -228,6 +214,7 @@ const wallMaterial = new THREE.MeshStandardMaterial({
   roughness: 0.8, // Adjust roughness for better appearance
   metalness: 0.1, // Adjust metalness for better appearance
   side: THREE.DoubleSide, // Render both sides
+  envMapIntensity: .01, // Adjust environment map intensity
 });
 
 
@@ -292,6 +279,17 @@ loader.load(
   function (gltf) {
     scene.add(gltf.scene);
     gltf.scene.position.set(0, 0, 0);
+    gltf.scene.traverse((child) => {
+      if (child.isMesh) {
+        // Handle both single material and array of materials
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        materials.forEach((mat) => {
+          if (mat && typeof mat.envMapIntensity === 'undefined') {
+            mat.envMapIntensity = 1.0; // Set your default value here
+          }
+        });
+      }
+    });
   },
 
   undefined, // onProgress
@@ -717,36 +715,7 @@ function updateEnvironmentRotation() {
   renderer.toneMappingExposure = environmentSettings.exposure;
 }
 
-// Method 2: Using a wrapper object (alternative approach)
-function updateEnvironmentWithWrapper() {
-  if (!currentEnvMap) return;
-  
-  // Create a wrapper object that rotates the environment
-  const envWrapper = new THREE.Group();
-  envWrapper.rotation.y = environmentSettings.rotation;
-  
-  // Apply the rotated environment
-  scene.environment = currentEnvMap;
-  scene.background = currentEnvMap;
-  
-  // Update exposure
-  renderer.toneMappingExposure = environmentSettings.exposure;
-}
 
-// Method 3: Regenerating environment map with rotation (most accurate but less performant)
-function regenerateEnvironmentMap() {
-  if (!originalEnvTexture) return;
-  
-  // Create a temporary canvas to rotate the HDR texture
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  
-  // This is a simplified approach - for production use, you'd want to
-  // properly handle HDR data and rotation in shader space
-  
-  // For now, use the simpler scene rotation method
-  updateEnvironmentRotation();
-}
 
 // Load the environment map
 loadEnvironmentMap('je_gray.hdr');
@@ -777,24 +746,6 @@ environmentFolder.add(environmentSettings, 'exposure', 0.1, 3.0, 0.1)
   });
 
 environmentFolder.open();
-
-// Alternative Method 4: Using Matrix Transformation (Advanced)
-function updateEnvironmentWithMatrix() {
-  if (!currentEnvMap) return;
-  
-  // Create rotation matrix
-  const rotationMatrix = new THREE.Matrix4();
-  rotationMatrix.makeRotationY(environmentSettings.rotation);
-  
-  // Apply matrix to environment mapping
-  // This requires custom shader modifications for full implementation
-  scene.environment = currentEnvMap;
-  scene.background = currentEnvMap;
-  
-  // For basic rotation, scene rotation is still the most practical approach
-  scene.rotation.y = environmentSettings.rotation;
-  renderer.toneMappingExposure = environmentSettings.exposure;
-}
 
 // Clean up function
 function dispose() {
@@ -889,3 +840,5 @@ function animate() {
     controls.update();
     renderer.render(scene, camera);
 }
+
+
