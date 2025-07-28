@@ -27,8 +27,6 @@ document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; // Optional, for smooth interaction
 
-camera.position.set(5, 2, 5);
-camera.lookAt(0, 0, 0);
 
 // === HDR Environment Map ===
 const pmremGenerator = new THREE.PMREMGenerator(renderer);
@@ -648,8 +646,12 @@ loader.load(
 
 
 
+// initial values
+scene.rotation.set(0, 3.26, 0); // Reset scene rotation
+camera.rotation.set(-1.8, 1.13, 1.82); // Reset camera rotation
+camera.position.set(3.01, 1.8, -.7); // Reset camera position
+renderer.toneMappingExposure = .4;
 
-animate();
 
 // === Window Resize Handler ===
 window.addEventListener( 'resize', () => {
@@ -1062,8 +1064,30 @@ ssrFolder.open();
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
+        if (camera.position.y < 0.5) {
+        camera.position.y = 0.5;
+    }
 
+            if (camera.position.y > 3.5) {
+        camera.position.y = 3.5;
+    }
+
+                if (camera.position.x > 5.5) {
+        camera.position.x = 5.5;
+    }
+                    if (camera.position.x < -3.5) {
+        camera.position.x = -3.5;
+    }
+
+                    if (camera.position.z > 3.5) {
+        camera.position.z = 3.5;
+    }
+                    if (camera.position.z < -3.5) {
+        camera.position.z = -3.5;
+    }
+    console.log('Camera position:', camera.position);
+    console.log('Camera rotation:', camera.rotation);
     composer.render();
 }
-
+animate();
 
