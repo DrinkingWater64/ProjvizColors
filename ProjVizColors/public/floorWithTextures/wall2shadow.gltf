@@ -15,18 +15,18 @@
 	"nodes":[
 		{
 			"mesh":0,
-			"name":"wall1"
+			"name":"wall2"
 		}
 	],
 	"materials":[
 		{
 			"doubleSided":true,
-			"name":"wall1"
+			"name":"wall2"
 		}
 	],
 	"meshes":[
 		{
-			"name":"Plane.003",
+			"name":"Plane.004",
 			"primitives":[
 				{
 					"attributes":{
@@ -46,14 +46,14 @@
 			"componentType":5126,
 			"count":4,
 			"max":[
-				3.9749088287353516,
-				3.059100866317749,
-				3.948284149169922
+				3.969500780105591,
+				3.0719828605651855,
+				3.9487478733062744
 			],
 			"min":[
-				-5.859673500061035,
-				0.0017108917236328125,
-				3.9482836723327637
+				3.969500780105591,
+				0.0022461414337158203,
+				-3.946742296218872
 			],
 			"type":"VEC3"
 		},
@@ -105,7 +105,7 @@
 	"buffers":[
 		{
 			"byteLength":140,
-			"uri":"wall1shadow.bin"
+			"uri":"wall2shadow.bin"
 		}
 	]
 }

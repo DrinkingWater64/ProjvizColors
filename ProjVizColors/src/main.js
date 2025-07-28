@@ -124,14 +124,14 @@ const floorShadowTexture = textureLoader.load(
 );
 
 const wall1ShadowTexture = textureLoader.load(
-    '/textures/ShadowBake/wall1ShadowInvert.png',
+    '/floorWithTextures/wall1ShadowTexture2kinvert.png',
     onTextureLoad,
     onTextureProgress,
     onTextureError
 );
 
 const wall2ShadowTexture = textureLoader.load(
-    '/textures/ShadowBake/wall2Shadow.png',
+    '/floorWithTextures/wall2shadowTextureInvert.png',
     onTextureLoad,
     onTextureProgress,
     onTextureError
@@ -319,7 +319,7 @@ const wall1ShadowMaterial = new THREE.MeshStandardMaterial({
 const wall2ShadowMaterial = new THREE.MeshStandardMaterial({
   color: 0x000000, // White color for the shadow
   alphaMap: wall2ShadowTexture, // Use the same texture for alpha
-  opacity: 1.0, // Set to 1 for full visibility
+  opacity: .5, // Set to 1 for full visibility
   side: THREE.DoubleSide, // Render both sides
   transparent: true,
 });
@@ -412,7 +412,7 @@ loader.load(
 );
 
 
-
+// todo: work in progress
 loader.load(
   'floorWithTextures/ceilingShadow.gltf', // Path relative to the public folder
   function (gltf) {
@@ -432,7 +432,6 @@ loader.load(
   }
 );
 
-// === Floor Model ===
 loader.load(
   'floorWithTextures/ceilingShadow.gltf', // Path relative to the public folder
   function (gltf) {
@@ -453,10 +452,10 @@ loader.load(
 
 
 loader.load(
-  'models/wall1.gltf', // Path relative to the public folder
+  'floorWithTextures/wall1shadow.gltf', // Path relative to the public folder
   function (gltf) {
     scene.add(gltf.scene);
-    gltf.scene.position.set(-.94, 1.5, 3.935);
+    gltf.scene.position.set(-1.88, 0, 7.887);
     gltf.scene.scale.set(1, 1, 1);
     gltf.scene.rotation.set(0, Math.PI, 0); // Rotate to face the camera
     console.log('Wall1 model loaded successfully');
@@ -500,7 +499,7 @@ loader.load(
 );
 
 loader.load(
-  'models/wall2.gltf', // Path relative to the public folder
+  'floorWithTextures/wall2shadow.gltf', // Path relative to the public folder
   function (gltf) {
     scene.add(gltf.scene);
     gltf.scene.position.set(7.94, 0, 0);
