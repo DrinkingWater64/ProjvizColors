@@ -98,16 +98,6 @@ composer.addPass(new OutputPass());
 
 
 
-var testbox = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshBasicMaterial({ color: 0x00ff00 })
-);
-testbox.position.set(0, 1, -4);
-scene.add(testbox);
-ssrPass.selects.push(testbox);
-
-
-
 
 // === Load Shadow Texture ===
 // === Comprehensive Texture Debugging ===
@@ -992,6 +982,12 @@ const ssrSettings = {
     output: SSRPass.OUTPUT.Default
 };
 
+// initial ssr settings
+ssrPass.maxDistance = .15
+ssrPass.opacity = .38
+ssrPass.thickness = .18
+groundReflector.opacity = .38
+
 // Add SSR folder to GUI
 const ssrFolder = gui.addFolder('Screen Space Reflections');
 
@@ -1064,29 +1060,9 @@ ssrFolder.open();
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
-        if (camera.position.y < 0.5) {
-        camera.position.y = 0.5;
-    }
-
-            if (camera.position.y > 3.5) {
-        camera.position.y = 3.5;
-    }
-
-                if (camera.position.x > 5.5) {
-        camera.position.x = 5.5;
-    }
-                    if (camera.position.x < -3.5) {
-        camera.position.x = -3.5;
-    }
-
-                    if (camera.position.z > 3.5) {
-        camera.position.z = 3.5;
-    }
-                    if (camera.position.z < -3.5) {
-        camera.position.z = -3.5;
-    }
-    console.log('Camera position:', camera.position);
-    console.log('Camera rotation:', camera.rotation);
+    camera.position.y = Math.max(0.5, Math.min(3.5, camera.position.y));
+    camera.position.x = Math.max(-3.5, Math.min(5.5, camera.position.x));
+    camera.position.z = Math.max(-3.5, Math.min(3.5, camera.position.z));
     composer.render();
 }
 animate();
