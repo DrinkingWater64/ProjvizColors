@@ -117,7 +117,7 @@ const textureLoader = new THREE.TextureLoader();
 
 // 1. Basic texture loading with all callbacks
 const floorShadowTexture = textureLoader.load(
-    '/textures/ShadowBake/FloorShadowTextureInvert.png',
+    '/floorWithTextures/floorShadow2kInvert.png',
     onTextureLoad,
     onTextureProgress,
     onTextureError
@@ -254,7 +254,8 @@ setFloorTextureTiling(4, 2); // Set initial tiling values
 
 // === Floor Material ===
 const floorMaterial = new THREE.MeshStandardMaterial({
-  map: floorDiffuse,
+  color: 0xffffff, // White color for the floor
+  // map: floorDiffuse,
   normalMap: floorNormal,
   roughnessMap: floorRoughness,
   displacementMap: floorDisplacement,
@@ -289,7 +290,8 @@ const wallMaterial = new THREE.MeshStandardMaterial({
 const floorShadowMaterial = new THREE.MeshStandardMaterial({
   color: 0x000000, // White color for the shadow
   alphaMap: floorShadowTexture, // Use the same texture for alpha
-  opacity: .5, // Set to 1 for full visibility
+  alphaTest: 0.01, // Adjust alpha test to control visibility
+  opacity: 1, // Set to 1 for full visibility
   side: THREE.DoubleSide, // Render both sides
   transparent: true,
 });
@@ -342,7 +344,7 @@ const wall4ShadowMaterial = new THREE.MeshStandardMaterial({
 // === Load GLTF Model ===
 const loader = new GLTFLoader();
 loader.load(
-  '/kitchenProps/kitchenProps.gltf',
+  '/floorWithTextures/prop.gltf',
   function (gltf) {
     scene.add(gltf.scene);
     gltf.scene.position.set(0, 0, 0);
@@ -372,13 +374,16 @@ loader.load(
 
 var kitchenShadowBaker = null;
 loader.load(
-  'models/floorShadow.glb', // Path relative to the public folder
+  'floorWithTextures/floorShadow.gltf', // Path relative to the public folder
   function (gltf) {
-    kitchenShadowBaker = gltf.scene;
-    scene.add(kitchenShadowBaker);
-    kitchenShadowBaker.position.set(0, .032, 0);
-    kitchenShadowBaker.scale.set(1, 1, -1);
-    assignShadowTexture(); 
+    scene.add(gltf.scene);
+    gltf.scene.position.set(0, .035, 0);
+    gltf.scene.scale.set(1, 1, 1);
+    gltf.scene.traverse( x => {
+        if (x.isMesh){
+            x.material = floorShadowMaterial;
+        }
+    })
   },
 
   undefined, // onProgress
@@ -396,6 +401,46 @@ loader.load(
     gltf.scene.traverse( x => {
         if (x.isMesh){
             x.material = floorMaterial;
+        }
+    })
+  },
+
+  undefined, // onProgress
+  function (error) {
+    console.error('An error happened', error);
+  }
+);
+
+
+
+loader.load(
+  'floorWithTextures/ceilingShadow.gltf', // Path relative to the public folder
+  function (gltf) {
+    scene.add(gltf.scene);
+    gltf.scene.position.set(0, 1, 0);
+    gltf.scene.scale.set(1, 1, 1);
+    gltf.scene.traverse( x => {
+        if (x.isMesh){
+            x.material = floorShadowMaterial;
+        }
+    })
+  },
+
+  undefined, // onProgress
+  function (error) {
+    console.error('An error happened', error);
+  }
+);
+
+// === Floor Model ===
+loader.load(
+  'floorWithTextures/ceilingShadow.gltf', // Path relative to the public folder
+  function (gltf) {
+    scene.add(gltf.scene);
+    gltf.scene.position.set(0,1, 0);
+    gltf.scene.traverse( x => {
+        if (x.isMesh){
+            x.material = wallMaterial;
         }
     })
   },
