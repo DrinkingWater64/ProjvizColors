@@ -138,7 +138,7 @@ const wall2ShadowTexture = textureLoader.load(
 );
 
 const wall3ShadowTexture = textureLoader.load(
-    '/textures/ShadowBake/wall3ShadowInvert.png',
+    '/floorWithTextures/wall3ShadowInvert.png',
     onTextureLoad,
     onTextureProgress,
     onTextureError
@@ -327,7 +327,7 @@ const wall2ShadowMaterial = new THREE.MeshStandardMaterial({
 const wall3ShadowMaterial = new THREE.MeshStandardMaterial({
   color: 0x000000, // White color for the shadow
   alphaMap: wall3ShadowTexture, // Use the same texture for alpha
-  opacity: .4, // Set to 1 for full visibility
+  opacity: 1, // Set to 1 for full visibility
   side: THREE.DoubleSide, // Render both sides
   transparent: true,
 });
@@ -339,7 +339,6 @@ const wall4ShadowMaterial = new THREE.MeshStandardMaterial({
   side: THREE.DoubleSide, // Render both sides
   transparent: true,
 });
-
 
 // === Load GLTF Model ===
 const loader = new GLTFLoader();
@@ -412,7 +411,7 @@ loader.load(
 );
 
 
-// todo: work in progress
+// todo: work in progress ========Ceiling ===============
 loader.load(
   'floorWithTextures/ceilingShadow.gltf', // Path relative to the public folder
   function (gltf) {
@@ -451,6 +450,10 @@ loader.load(
 );
 
 
+// === Wall Models ===
+
+// wall 1
+ 
 loader.load(
   'floorWithTextures/wall1shadow.gltf', // Path relative to the public folder
   function (gltf) {
@@ -497,6 +500,9 @@ loader.load(
     console.error('An error happened', error);
   }
 );
+
+
+// wall 2
 
 loader.load(
   'floorWithTextures/wall2shadow.gltf', // Path relative to the public folder
@@ -545,9 +551,10 @@ loader.load(
   }
 );
 
+// wall 3
 
 loader.load(
-  'models/wall3.gltf', // Path relative to the public folder
+  'floorWithTextures/wall3shadow.gltf', // Path relative to the public folder
   function (gltf) {
     scene.add(gltf.scene);
     gltf.scene.position.set( -11.65, 0, 0);
