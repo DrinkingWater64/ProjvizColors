@@ -75,19 +75,19 @@ let modelsLoaded = 0;
 
 let totalModelsToLoad = 0;
 
-loadingManager.onStart = function(url, itemsLoaded, itemsTotal) {
-    console.log('Started loading:', url);
-    totalModelsToLoad = itemsTotal;
-};
+// loadingManager.onStart = function(url, itemsLoaded, itemsTotal) {
+//     console.log('Started loading:', url);
+//     totalModelsToLoad = itemsTotal;
+// };
 
-loadingManager.onProgress = function(url, itemsLoaded, itemsTotal) {
-    console.log('Loading progress:', itemsLoaded + '/' + itemsTotal);
-    modelsLoaded = itemsLoaded;
-};
+// loadingManager.onProgress = function(url, itemsLoaded, itemsTotal) {
+//     console.log('Loading progress:', itemsLoaded + '/' + itemsTotal);
+//     modelsLoaded = itemsLoaded;
+// };
 
-loadingManager.onError = function(url) {
-    console.error('Error loading:', url);
-};
+// loadingManager.onError = function(url) {
+//     console.error('Error loading:', url);
+// };
 
 
 // === HDR Environment Map ===
@@ -292,7 +292,7 @@ function createCustomMaterial(file) {
             
             // Apply current tiling settings
             Object.values(loadedTextures).forEach(texture => {
-                texture.repeat.set(materialEditor.tiling.x, materialEditor.tiling.y);
+                texture.repeat.set(materialEditor.tiling.x, materialEditor.tiling.x);
                 texture.rotation = materialEditor.tiling.rotation;
                 texture.wrapS = THREE.RepeatWrapping;
                 texture.wrapT = THREE.RepeatWrapping;
@@ -430,7 +430,7 @@ const wallDisplacement = textureLoader.load(
 );
 
 const wallTextures = [wallDisplacement,wallAo, wallroughness, wallnormal,walldiffuse];
-const setWallTextureTiling = (repeatX = 4, repeatY = 2) => {
+const setWallTextureTiling = (repeatX = 4, repeatY = 4) => {
   wallTextures.forEach(texture => {
     texture.repeat.set(repeatX, repeatY);
     texture.wrapS = THREE.RepeatWrapping;
@@ -478,14 +478,14 @@ const floorAo = textureLoader.load(
 );
 
 const floorTextures = [floorDiffuse, floorNormal, floorRoughness, floorDisplacement, floorAo];
-const setFloorTextureTiling = (repeatX = 4, repeatY = 2) => {
+const setFloorTextureTiling = (repeatX = 4, repeatY = 4) => {
   floorTextures.forEach(texture => {
     texture.repeat.set(repeatX, repeatY);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
   });
 };
-setFloorTextureTiling(4, 2); // Set initial tiling values
+setFloorTextureTiling(4, 4); // Set initial tiling values
 
 // === Floor Material ===
 const floorMaterial = new THREE.MeshStandardMaterial({
@@ -583,7 +583,6 @@ const materialEditor = {
     color: 0xffffff,
     tiling: {
         x: 4,
-        y: 2,
         rotation: 0
     },
     currentMesh: null
@@ -1231,7 +1230,6 @@ function createSurfaceController() {
                     // Update tiling from the material's map texture
                     if (meshEntry.mesh.material.map) {
                         materialEditor.tiling.x = meshEntry.mesh.material.map.repeat.x;
-                        materialEditor.tiling.y = meshEntry.mesh.material.map.repeat.y;
                         materialEditor.tiling.rotation = meshEntry.mesh.material.map.rotation || 0;
                     }
                 }
@@ -1259,12 +1257,12 @@ const colorController = materialEditorFolder.addColor(materialEditor, 'color')
 const tilingFolder = materialEditorFolder.addFolder('Texture Tiling');
 
 const tilingXController = tilingFolder.add(materialEditor.tiling, 'x', 0.1, 20, 0.1)
-    .name('Tiling X')
+    .name('Tiling')
     .onChange(updateTextureTiling);
 
-const tilingYController = tilingFolder.add(materialEditor.tiling, 'y', 0.1, 20, 0.1)
-    .name('Tiling Y')
-    .onChange(updateTextureTiling);
+// const tilingYController = tilingFolder.add(materialEditor.tiling, 'y', 0.1, 20, 0.1)
+//     .name('Tiling Y')
+//     .onChange(updateTextureTiling);
 
 const rotationController = tilingFolder.add(materialEditor.tiling, 'rotation', 0, Math.PI * 2, 0.01)
     .name('Rotation')
@@ -1300,7 +1298,7 @@ function applyMaterialToMesh(mesh, presetKey) {
     // Apply current tiling settings
     if (newMaterial.userData.textures) {
         Object.values(newMaterial.userData.textures).forEach(texture => {
-            texture.repeat.set(materialEditor.tiling.x, materialEditor.tiling.y);
+            texture.repeat.set(materialEditor.tiling.x, materialEditor.tiling.x);
             texture.rotation = materialEditor.tiling.rotation;
             texture.wrapS = THREE.RepeatWrapping;
             texture.wrapT = THREE.RepeatWrapping;
@@ -1334,7 +1332,7 @@ function updateTextureTiling() {
     
     texturesToUpdate.forEach(texture => {
         if (texture) {
-            texture.repeat.set(materialEditor.tiling.x, materialEditor.tiling.y);
+            texture.repeat.set(materialEditor.tiling.x, materialEditor.tiling.x);
             texture.rotation = materialEditor.tiling.rotation;
             texture.center.set(0.5, 0.5);
             texture.needsUpdate = true;
@@ -1344,7 +1342,7 @@ function updateTextureTiling() {
     // Also update userData textures if they exist
     if (material.userData && material.userData.textures) {
         Object.values(material.userData.textures).forEach(texture => {
-            texture.repeat.set(materialEditor.tiling.x, materialEditor.tiling.y);
+            texture.repeat.set(materialEditor.tiling.x, materialEditor.tiling.x);
             texture.rotation = materialEditor.tiling.rotation;
             texture.center.set(0.5, 0.5);
             texture.needsUpdate = true;
@@ -1363,13 +1361,11 @@ function updateMaterialControls() {
     // Update tiling values if textures exist
     if (material.map) {
         materialEditor.tiling.x = material.map.repeat.x;
-        materialEditor.tiling.y = material.map.repeat.y;
         materialEditor.tiling.rotation = material.map.rotation || 0;
     }
     
     // Update GUI displays
     tilingXController.updateDisplay();
-    tilingYController.updateDisplay();
     rotationController.updateDisplay();
     // colorController.updateDisplay();
 
@@ -1580,6 +1576,7 @@ ambientFolder.open();
 
 console.log('meshRegistry', meshRegistry);
 function animate() {
+    stats.begin();
     requestAnimationFrame(animate);
     controls.update();
     camera.position.y = Math.max(0.5, Math.min(3.5, camera.position.y));
@@ -1589,4 +1586,3 @@ function animate() {
 
     stats.end();
 }
-// animate();
