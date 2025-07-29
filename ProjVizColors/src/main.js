@@ -152,6 +152,8 @@ const materialPresets = {
 // Function to create material from preset
 function createMaterialFromPreset(presetKey, color = 0xffffff) {
     const preset = materialPresets[presetKey];
+    console.log('Creating material from preset:', presetKey);
+
     const loadedTextures = {};
     
     // Load all textures for this preset
@@ -1211,22 +1213,23 @@ const materialEditorFolder = gui.addFolder('Material Editor');
 
 // Material preset selector
 const materialOptions = {
-    'tile1': materialPresets.tile1.name,
-    'tile2': materialPresets.tile2.name,
+    'Wood': 'tile1',
+    'Biege': 'tile2',
 };
 
 
 materialEditorFolder.add(materialEditor, 'selectedMaterial', materialOptions)
     .name('Material Type')
     .onChange(value => {
-        // if (!materialEditor.currentMesh) {
-        //     alert('Please select a surface first!');
-        //     return;
-        // }
+        if (!materialEditor.currentMesh) {
+            alert('Please select a surface first!');
+            return;
+        }
         
-        // // Apply new material
-        // applyMaterialToMesh(materialEditor.currentMesh, value);
-        // updateMaterialControls();
+        console.log('Selected material:', value);
+        // Apply new material
+        applyMaterialToMesh(materialEditor.currentMesh, value);
+        updateMaterialControls();
         console.log('Material options:', materialOptions, value);
     });
 
@@ -1245,9 +1248,6 @@ function updateSurfaceDropdown() {
     meshRegistry.floors.forEach((entry, index) => {
         surfaceOptions[`floor_${index}`] = `floor_${index}`;
     });
-
-    console.log('Mesh registry:', meshRegistry);
-    console.log('Updated surface options:', surfaceOptions);
 }
 
 // Surface controller
@@ -1272,8 +1272,6 @@ function createSurfaceController() {
             
             // Parse the selection
             const [type, index] = value.split('_');
-            console.log('Value = ', value, '/ parsed type:', type, 'index:', index);
-            console.log('type:', type, 'index:', index);
             let meshEntry;
             
             if (type === 'wall') {
@@ -1367,29 +1365,29 @@ const rotationController = tilingFolder.add(materialEditor.tiling, 'rotation', 0
 
 
 // // Helper functions
-// function applyMaterialToMesh(mesh, presetKey) {
-//     const newMaterial = createMaterialFromPreset(presetKey, materialEditor.color);
+function applyMaterialToMesh(mesh, presetKey) {
+    const newMaterial = createMaterialFromPreset(presetKey, materialEditor.color);
     
-//     // Apply current tiling settings
-//     if (newMaterial.userData.textures) {
-//         Object.values(newMaterial.userData.textures).forEach(texture => {
-//             texture.repeat.set(materialEditor.tiling.x, materialEditor.tiling.y);
-//             texture.rotation = materialEditor.tiling.rotation;
-//             texture.wrapS = THREE.RepeatWrapping;
-//             texture.wrapT = THREE.RepeatWrapping;
-//             texture.center.set(0.5, 0.5);
-//         });
-//     }
+    // Apply current tiling settings
+    if (newMaterial.userData.textures) {
+        Object.values(newMaterial.userData.textures).forEach(texture => {
+            texture.repeat.set(materialEditor.tiling.x, materialEditor.tiling.y);
+            texture.rotation = materialEditor.tiling.rotation;
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.center.set(0.5, 0.5);
+        });
+    }
     
-//     // Preserve the original material reference
-//     const entry = findMeshEntry(mesh);
-//     if (entry && !entry.originalMaterial && mesh.material) {
-//         entry.originalMaterial = mesh.material.clone();
-//     }
+    // Preserve the original material reference
+    const entry = findMeshEntry(mesh);
+    if (entry && !entry.originalMaterial && mesh.material) {
+        entry.originalMaterial = mesh.material.clone();
+    }
     
-//     mesh.material = newMaterial;
-//     mesh.material.needsUpdate = true;
-// }
+    mesh.material = newMaterial;
+    mesh.material.needsUpdate = true;
+}
 
 function updateTextureTiling() {
     if (!materialEditor.currentMesh || !materialEditor.currentMesh.material) return;
@@ -1447,10 +1445,10 @@ function updateMaterialControls() {
     // colorController.updateDisplay();
 }
 
-// function findMeshEntry(mesh) {
-//     const allEntries = [...meshRegistry.walls, ...meshRegistry.floors, ...meshRegistry.ceilings];
-//     return allEntries.find(entry => entry.mesh === mesh);
-// }
+function findMeshEntry(mesh) {
+    const allEntries = [...meshRegistry.walls, ...meshRegistry.floors];
+    return allEntries.find(entry => entry.mesh === mesh);
+}
 
 // // Open folders
 // materialEditorFolder.open();
