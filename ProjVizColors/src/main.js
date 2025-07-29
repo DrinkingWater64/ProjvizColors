@@ -5,6 +5,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RectAreaLightHelper } from 'three/addons/helpers/RectAreaLightHelper.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import * as dat from 'dat.gui';
+import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 // ssr
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
@@ -12,6 +13,16 @@ import { SSRPass } from 'three/examples/jsm/postprocessing/SSRPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ReflectorForSSRPass } from 'three/examples/jsm/objects/ReflectorForSSRPass.js';
 import { ACESFilmicToneMapping } from 'three';
+
+//stat setup
+const stats = new Stats();
+stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+document.body.appendChild(stats.dom);
+
+stats.dom.style.position = 'absolute';
+stats.dom.style.top = '0px';
+stats.dom.style.left = '0px';
+
 
 // === Scene Setup ===
 const scene = new THREE.Scene();
@@ -907,110 +918,15 @@ window.addEventListener( 'resize', () => {
 
 
 
-// === GUI Setup ===
-const settings = {
-  yellowMaterial: 0xFFFF00,
-  redMaterial: 0xFF0000,
-  shadowOpacity: 0.5
-};
+
 
 // Create GUI
 const gui = new dat.GUI({ width: 300 });
 
-// Materials folder
-const materialsFolder = gui.addFolder('Materials');
-
-// Add color controllers
-materialsFolder.addColor(settings, 'yellowMaterial').name('Yellow Color').onChange(function(value) {
-  wallMaterial.color.set(value);
-});
-
-materialsFolder.addColor(settings, 'redMaterial').name('Red Color').onChange(function(value) {
-  RedwMaterial.color.set(value);
-});
-
-// Shadows folder
-const shadowsFolder = gui.addFolder('Shadows');
-
-// Add opacity controller for floor shadow
-shadowsFolder.add(settings, 'shadowOpacity', 0, 1, 0.01).name('Floor Shadow Opacity').onChange(function(value) {
-  floorShadowMaterial.opacity = value;
-});
-
-// Open folders
-materialsFolder.open();
-shadowsFolder.open();
-
-
-// // Add to GUI
-// const tilingSettings = {
-//   repeatX: 4,
-//   repeatY: 2,
-//   autoTile: true,
-//   tilesPerMeter: 1
-// };
-
-// const tilingFolder = gui.addFolder('Wall Textures');
-
-// tilingFolder.add(tilingSettings, 'repeatX', 1, 20, 0.5).name('Horizontal Tiles').onChange(value => {
-//   if (!tilingSettings.autoTile) {
-//     setWallTextureTiling(value, tilingSettings.repeatY);
-//   }
-// });
-
-// tilingFolder.add(tilingSettings, 'repeatY', 1, 20, 0.5).name('Vertical Tiles').onChange(value => {
-//   if (!tilingSettings.autoTile) {
-//     setWallTextureTiling(tilingSettings.repeatX, value);
-//   }
-// });
-
-// tilingFolder.add(tilingSettings, 'autoTile').name('Auto-Tile Based on Size');
-// tilingFolder.add(tilingSettings, 'tilesPerMeter', 0.1, 5, 0.1).name('Tiles Per Meter').onChange(value => {
-//   if (tilingSettings.autoTile) {
-//     // Re-apply auto tiling to all wall meshes
-//     scene.traverse(object => {
-//       if (object.isMesh && object.material === wallMaterial) {
-//         setupWallTextureTiling(object, value);
-//       }
-//     });
-//   }
-// });
-
-// tilingFolder.open();
-
-// // Function to set up wall texture tiling based on wall dimensions
-// function setupWallTextureTiling(wallMesh, tilesPerMeter = 1) {
-//   if (!tilingSettings.autoTile) return;
-  
-//   // Get the size of the wall
-//   const bbox = new THREE.Box3().setFromObject(wallMesh);
-//   const size = new THREE.Vector3();
-//   bbox.getSize(size);
-  
-//   // Calculate how many tiles to apply
-//   const repeatX = Math.max(1, Math.round(size.x * tilesPerMeter));
-//   const repeatY = Math.max(1, Math.round(size.y * tilesPerMeter));
-  
-//   // Apply to textures
-//   setWallTextureTiling(repeatX, repeatY);
-  
-//   // Update the UI
-//   tilingSettings.repeatX = repeatX;
-//   tilingSettings.repeatY = repeatY;
-// }
 
 
 
-// === Assign Shadow Texture to Model ===
-function assignShadowTexture() {
-    if (kitchenShadowBaker) {
-        kitchenShadowBaker.traverse((child) => {
-            if (child.isMesh) {
-                child.material = floorShadowMaterial;
-            }
-        });
-    }
-}
+
 
 
 // === Reusable Texture Load Callback ===
@@ -1118,7 +1034,7 @@ environmentFolder.add(environmentSettings, 'exposure', 0.1, 3.0, 0.1)
     renderer.toneMappingExposure = value;
   });
 
-environmentFolder.open();
+// environmentFolder.open();
 
 // Clean up function
 function dispose() {
@@ -1131,175 +1047,6 @@ function dispose() {
   pmremGenerator.dispose();
 }
 
-
-
-//  light settings
-const lightSettings = {
-
-  // Ambient Light (Fill light)
-  ambientEnabled: true,
-  ambientIntensity: 0.3,
-  ambientColor: 0x404040,
-
-
-  // Rect Area Light (Key light)
-  rectEnabled: true,
-  rectIntensity: 1,
-  rectColor: 0xffffff,
-  rectWidth: 12,
-  rectHeight: 12,
-  rectX: 0,
-  rectY: 3,
-  rectZ: 0
-}
-
-// light inint
-
-const lights = {}
-
-lights.ambientLight = new THREE.AmbientLight(lightSettings.ambientColor, lightSettings.ambientIntensity);
-lights.ambientLight.visible = lightSettings.ambientEnabled;
-scene.add(lights.ambientLight);
-
-function updateAmbientLight() {
-  if (!lights.ambientLight) return;
-  
-  lights.ambientLight.visible = lightSettings.ambientEnabled;
-  lights.ambientLight.intensity = lightSettings.ambientIntensity;
-  lights.ambientLight.color.setHex(lightSettings.ambientColor);
-}
-
-
-// Rect Area Light (Key light)
-RectAreaLightUniformsLib.init();
-
-lights.rectLight = new THREE.RectAreaLight(
-  lightSettings.rectColor,
-  lightSettings.rectIntensity,
-  lightSettings.rectWidth,
-  lightSettings.rectHeight
-);
-lights.rectLight.position.set(lightSettings.rectX, lightSettings.rectY, lightSettings.rectZ);
-lights.rectLight.lookAt(0, 0, 0);
-lights.rectLight.visible = lightSettings.rectEnabled;
-scene.add(lights.rectLight);
-
-// Add helper
-const rectLightHelper = new RectAreaLightHelper(lights.rectLight);
-scene.add(rectLightHelper);
-// Make the helper more visible
-rectLightHelper.material.color.set(0xffff00); // Yellow
-rectLightHelper.material.transparent = true;
-rectLightHelper.material.opacity = 0.7;
-
-console.log('Rect Area Light Helper:', rectLightHelper);
-
-
-// light gui
-const lightingFolder = gui.addFolder('Additional Lighting');
-const ambientFolder = lightingFolder.addFolder('Ambient Light (Fill)');
-ambientFolder.add(lightSettings, 'ambientEnabled').name('Enable').onChange(updateAmbientLight);
-ambientFolder.add(lightSettings, 'ambientIntensity', 0, 10, 0.1).name('Intensity').onChange(updateAmbientLight);
-ambientFolder.addColor(lightSettings, 'ambientColor').name('Color').onChange(updateAmbientLight);
-
-
-lightingFolder.open();
-ambientFolder.open();
-
-
-
-
-
-// ssr
-
-// === SSR Settings for GUI ===
-const ssrSettings = {
-    enableSSR: true,
-    groundReflector: true,  // Add this
-    thickness: 0.18,
-    maxDistance: 1.0,
-    opacity: 1,
-    blur: true,
-    fresnel: true,
-    bouncing: true,
-    infiniteThick: false,
-    showReflector: false,  // ADDED THIS
-    reflectorY: 0.026,  
-    output: SSRPass.OUTPUT.Default
-};
-
-// initial ssr settings
-ssrPass.maxDistance = .15
-ssrPass.opacity = .38
-ssrPass.thickness = .18
-groundReflector.opacity = .38
-
-// Add SSR folder to GUI
-const ssrFolder = gui.addFolder('Screen Space Reflections');
-
-ssrFolder.add(ssrSettings, 'enableSSR').name('Enable SSR').onChange(value => {
-    ssrPass.enabled = value;
-});
-
-ssrFolder.add(ssrSettings, 'thickness', 0, 1.0, 0.001).name('Thickness').onChange(value => {
-    ssrPass.thickness = value;
-});
-
-ssrFolder.add(ssrSettings, 'maxDistance', 0, 5, 0.01).name('Max Distance').onChange(value => {
-    ssrPass.maxDistance = value;
-    groundReflector.maxDistance = value;
-});
-
-ssrFolder.add(ssrSettings, 'opacity', 0, 1, 0.01).name('Opacity').onChange(value => {
-    ssrPass.opacity = value;
-    if (groundReflector) groundReflector.opacity = value;
-});
-
-ssrFolder.add(ssrSettings, 'blur').name('Blur').onChange(value => {
-    ssrPass.blur = value;
-});
-
-ssrFolder.add(ssrSettings, 'fresnel').name('Fresnel').onChange(value => {
-    ssrPass.fresnel = value;
-    if (groundReflector) groundReflector.fresnel = value;
-});
-
-ssrFolder.add(ssrSettings, 'bouncing').name('Bouncing').onChange(value => {
-    ssrPass.bouncing = value;
-});
-
-ssrFolder.add(ssrSettings, 'showReflector').name('Show Reflector').onChange(value => {
-    if (groundReflector) groundReflector.visible = value;
-});
-
-
-ssrFolder.add(ssrSettings, 'reflectorY', -0.1, 0.5, 0.001).name('Reflector Height').onChange(value => {
-    groundReflector.position.y = value;
-});
-
-
-ssrFolder.add(ssrSettings, 'output', {
-    'Default': SSRPass.OUTPUT.Default,
-    'SSR Only': SSRPass.OUTPUT.SSR,
-    'Beauty': SSRPass.OUTPUT.Beauty,
-    'Depth': SSRPass.OUTPUT.Depth,
-    'Normal': SSRPass.OUTPUT.Normal
-}).name('Output Mode').onChange(value => {
-    ssrPass.output = value;
-});
-
-
-ssrFolder.add(ssrSettings, 'groundReflector').name('Ground Reflector').onChange(value => {
-    if (value) {
-        ssrPass.groundReflector = groundReflector;
-        ssrPass.selects = selects;
-    } else {
-        ssrPass.groundReflector = null;
-        ssrPass.selects = null;
-    }
-});
-
-ssrFolder.open();
 
 // === Material Editor Settings ===
 
@@ -1476,16 +1223,6 @@ function createSurfaceController() {
 
 createSurfaceController();
 
-
-
-
-
-
-
-
-
-
-
 const colorController = materialEditorFolder.addColor(materialEditor, 'color')
     .name('Color')
     .onChange(value => {
@@ -1627,9 +1364,192 @@ function findMeshEntry(mesh) {
     return allEntries.find(entry => entry.mesh === mesh);
 }
 
-// // Open folders
-// materialEditorFolder.open();
+// Shadows folder
+// === GUI Setup ===
+const settings = {
+  shadowOpacity: 0.5
+};
+
+
+const shadowsFolder = gui.addFolder('Shadows');
+
+// Add opacity controller for floor shadow
+shadowsFolder.add(settings, 'shadowOpacity', 0, 1, 0.01).name('Floor Shadow Opacity').onChange(function(value) {
+  floorShadowMaterial.opacity = value;
+});
+
+// Open folders
+shadowsFolder.open();
+
+
+
+
+// Open folders
+materialEditorFolder.open();
 // tilingFolder.open();
+
+// ssr
+
+// === SSR Settings for GUI ===
+const ssrSettings = {
+    enableSSR: true,
+    groundReflector: true,  // Add this
+    thickness: 0.18,
+    maxDistance: 1.0,
+    opacity: 1,
+    blur: true,
+    fresnel: true,
+    bouncing: true,
+    infiniteThick: false,
+    showReflector: false,  // ADDED THIS
+    reflectorY: 0.026,  
+    output: SSRPass.OUTPUT.Default
+};
+
+// initial ssr settings
+ssrPass.maxDistance = .15
+ssrPass.opacity = .38
+ssrPass.thickness = .18
+groundReflector.opacity = .38
+
+// Add SSR folder to GUI
+const ssrFolder = gui.addFolder('Screen Space Reflections');
+
+ssrFolder.add(ssrSettings, 'enableSSR').name('Enable SSR').onChange(value => {
+    ssrPass.enabled = value;
+});
+
+ssrFolder.add(ssrSettings, 'thickness', 0, 1.0, 0.001).name('Thickness').onChange(value => {
+    ssrPass.thickness = value;
+});
+
+ssrFolder.add(ssrSettings, 'maxDistance', 0, 5, 0.01).name('Max Distance').onChange(value => {
+    ssrPass.maxDistance = value;
+    groundReflector.maxDistance = value;
+});
+
+ssrFolder.add(ssrSettings, 'opacity', 0, 1, 0.01).name('Opacity').onChange(value => {
+    ssrPass.opacity = value;
+    if (groundReflector) groundReflector.opacity = value;
+});
+
+ssrFolder.add(ssrSettings, 'blur').name('Blur').onChange(value => {
+    ssrPass.blur = value;
+});
+
+ssrFolder.add(ssrSettings, 'fresnel').name('Fresnel').onChange(value => {
+    ssrPass.fresnel = value;
+    if (groundReflector) groundReflector.fresnel = value;
+});
+
+ssrFolder.add(ssrSettings, 'bouncing').name('Bouncing').onChange(value => {
+    ssrPass.bouncing = value;
+});
+
+ssrFolder.add(ssrSettings, 'showReflector').name('Show Reflector').onChange(value => {
+    if (groundReflector) groundReflector.visible = value;
+});
+
+
+ssrFolder.add(ssrSettings, 'reflectorY', -0.1, 0.5, 0.001).name('Reflector Height').onChange(value => {
+    groundReflector.position.y = value;
+});
+
+
+ssrFolder.add(ssrSettings, 'output', {
+    'Default': SSRPass.OUTPUT.Default,
+    'SSR Only': SSRPass.OUTPUT.SSR,
+    'Beauty': SSRPass.OUTPUT.Beauty,
+    'Depth': SSRPass.OUTPUT.Depth,
+    'Normal': SSRPass.OUTPUT.Normal
+}).name('Output Mode').onChange(value => {
+    ssrPass.output = value;
+});
+
+
+ssrFolder.add(ssrSettings, 'groundReflector').name('Ground Reflector').onChange(value => {
+    if (value) {
+        ssrPass.groundReflector = groundReflector;
+        ssrPass.selects = selects;
+    } else {
+        ssrPass.groundReflector = null;
+        ssrPass.selects = null;
+    }
+});
+
+
+//  light settings
+const lightSettings = {
+
+  // Ambient Light (Fill light)
+  ambientEnabled: true,
+  ambientIntensity: 0.3,
+  ambientColor: 0x404040,
+
+
+  // Rect Area Light (Key light)
+  rectEnabled: true,
+  rectIntensity: 1,
+  rectColor: 0xffffff,
+  rectWidth: 12,
+  rectHeight: 12,
+  rectX: 0,
+  rectY: 3,
+  rectZ: 0
+}
+
+// light inint
+
+const lights = {}
+
+lights.ambientLight = new THREE.AmbientLight(lightSettings.ambientColor, lightSettings.ambientIntensity);
+lights.ambientLight.visible = lightSettings.ambientEnabled;
+scene.add(lights.ambientLight);
+
+function updateAmbientLight() {
+  if (!lights.ambientLight) return;
+  
+  lights.ambientLight.visible = lightSettings.ambientEnabled;
+  lights.ambientLight.intensity = lightSettings.ambientIntensity;
+  lights.ambientLight.color.setHex(lightSettings.ambientColor);
+}
+
+
+// Rect Area Light (Key light)
+RectAreaLightUniformsLib.init();
+
+lights.rectLight = new THREE.RectAreaLight(
+  lightSettings.rectColor,
+  lightSettings.rectIntensity,
+  lightSettings.rectWidth,
+  lightSettings.rectHeight
+);
+lights.rectLight.position.set(lightSettings.rectX, lightSettings.rectY, lightSettings.rectZ);
+lights.rectLight.lookAt(0, 0, 0);
+lights.rectLight.visible = lightSettings.rectEnabled;
+scene.add(lights.rectLight);
+
+// Add helper
+const rectLightHelper = new RectAreaLightHelper(lights.rectLight);
+scene.add(rectLightHelper);
+// Make the helper more visible
+rectLightHelper.material.color.set(0xffff00); // Yellow
+rectLightHelper.material.transparent = true;
+rectLightHelper.material.opacity = 0.7;
+
+console.log('Rect Area Light Helper:', rectLightHelper);
+
+
+// light gui
+const lightingFolder = gui.addFolder('Additional Lighting');
+const ambientFolder = lightingFolder.addFolder('Ambient Light (Fill)');
+ambientFolder.add(lightSettings, 'ambientEnabled').name('Enable').onChange(updateAmbientLight);
+ambientFolder.add(lightSettings, 'ambientIntensity', 0, 10, 0.1).name('Intensity').onChange(updateAmbientLight);
+ambientFolder.addColor(lightSettings, 'ambientColor').name('Color').onChange(updateAmbientLight);
+
+
+// lightingFolder.open();
+ambientFolder.open();
 
 
 // === Animation Loop ===
@@ -1642,5 +1562,7 @@ function animate() {
     camera.position.x = Math.max(-3.5, Math.min(5.5, camera.position.x));
     camera.position.z = Math.max(-3.5, Math.min(3.5, camera.position.z));
     composer.render();
+
+    stats.end();
 }
 animate();
