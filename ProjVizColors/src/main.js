@@ -63,31 +63,7 @@ setupLoadingManager(loadingManager, loaderElements, {
 });
 
 // loading manager settings
-let modelsLoaded = 0;
 
-// loadingManager.onLoad = function() {
-//     console.log('All models loaded!');
-//     updateSurfaceDropdown();
-//     createSurfaceController();
-// };
-
-
-
-let totalModelsToLoad = 0;
-
-// loadingManager.onStart = function(url, itemsLoaded, itemsTotal) {
-//     console.log('Started loading:', url);
-//     totalModelsToLoad = itemsTotal;
-// };
-
-// loadingManager.onProgress = function(url, itemsLoaded, itemsTotal) {
-//     console.log('Loading progress:', itemsLoaded + '/' + itemsTotal);
-//     modelsLoaded = itemsLoaded;
-// };
-
-// loadingManager.onError = function(url) {
-//     console.error('Error loading:', url);
-// };
 
 
 // === HDR Environment Map ===
