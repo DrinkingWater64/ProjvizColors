@@ -13,6 +13,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ReflectorForSSRPass } from 'three/examples/jsm/objects/ReflectorForSSRPass.js';
 import { ACESFilmicToneMapping } from 'three';
 
+// === Scene Setup ===
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
@@ -95,6 +96,93 @@ ssrPass.groundReflector = groundReflector;
 
 composer.addPass(ssrPass);
 composer.addPass(new OutputPass());
+
+// mesh registry
+
+const meshRegistry = {
+    walls: [],
+    floors: [],
+};
+
+let meshIdCounter = 0;
+
+function registerMesh(mesh, type, name) {
+    const entry = {
+        mesh: mesh,
+        name: name,
+        type: type,
+        id: meshIdCounter++,
+        originalMaterial: mesh.material ? mesh.material.clone() : null
+    };
+    
+    if (type === 'wall') {
+        meshRegistry.walls.push(entry);
+    } else if (type === 'floor') {
+        meshRegistry.floors.push(entry);
+    }
+    
+    console.log(`Registered ${type}: ${name}`, mesh);
+}
+
+const materialPresets = {
+    tile1: {
+        name: 'Wood Parquet',
+        textures: {
+            diffuse: '/floor/diagonal_parquet_diff_1k.png',
+            normal: '/floor/diagonal_parquet_nor_gl_1k.png',
+            roughness: '/floor/diagonal_parquet_rough_1k.png',
+            displacement: '/floor/diagonal_parquet_disp_1k.png',
+            ao: '/floor/diagonal_parquet_ao_1k.png'
+        },
+        defaultTiling: { x: 4, y: 2 }
+    },
+    tile2: {
+        name: 'Beige Wall',
+        textures: {
+            diffuse: '/beige_wall/textures/beige_wall_001_diff_1k.jpg',
+            normal: '/beige_wall/textures/beige_wall_001_nor_gl_1k.jpg',
+            roughness: '/beige_wall/textures/beige_wall_001_rough_1k.jpg',
+            displacement: '/beige_wall/textures/beige_wall_001_disp_1k.jpg',
+            ao: '/beige_wall/textures/beige_wall_001_ao_1k.jpg'
+        },
+        defaultTiling: { x: 4, y: 2 }
+    }
+};
+
+// Function to create material from preset
+function createMaterialFromPreset(presetKey, color = 0xffffff) {
+    const preset = materialPresets[presetKey];
+    const loadedTextures = {};
+    
+    // Load all textures for this preset
+    for (const [key, path] of Object.entries(preset.textures)) {
+        if (path) {
+            loadedTextures[key] = textureLoader.load(path);
+        }
+    }
+    
+    // Create material
+    const material = new THREE.MeshStandardMaterial({
+        color: color,
+        map: loadedTextures.diffuse || null,
+        normalMap: loadedTextures.normal || null,
+        roughnessMap: loadedTextures.roughness || null,
+        displacementMap: loadedTextures.displacement || null,
+        aoMap: loadedTextures.ao || null,
+        displacementScale: 0.01,
+        aoMapIntensity: 1.0,
+        roughness: 0.8,
+        metalness: 0.1,
+        side: THREE.DoubleSide,
+        envMapIntensity: 0.01
+    });
+    
+    // Store textures reference in material for later manipulation
+    material.userData.textures = loadedTextures;
+    material.userData.preset = presetKey;
+    
+    return material;
+}
 
 
 
@@ -243,7 +331,7 @@ setFloorTextureTiling(4, 2); // Set initial tiling values
 // === Floor Material ===
 const floorMaterial = new THREE.MeshStandardMaterial({
   color: 0xffffff, // White color for the floor
-  // map: floorDiffuse,
+  map: floorDiffuse,
   normalMap: floorNormal,
   roughnessMap: floorRoughness,
   displacementMap: floorDisplacement,
@@ -329,7 +417,53 @@ const wall4ShadowMaterial = new THREE.MeshStandardMaterial({
 });
 
 // === Load GLTF Model ===
-const loader = new GLTFLoader();
+
+const materialEditor = {
+    selectedSurface: 'none',
+    selectedMaterial: 'tile1',
+    color: 0xffffff,
+    tiling: {
+        x: 4,
+        y: 2,
+        rotation: 0
+    },
+    currentMesh: null
+};
+
+
+
+
+
+const loadingManager = new THREE.LoadingManager();
+let modelsLoaded = 0;
+const totalModels = 5; // Adjust based on your actual model count
+
+loadingManager.onLoad = function() {
+    console.log('All models loaded!');
+    updateSurfaceDropdown();
+    createSurfaceController();
+};
+
+
+
+let totalModelsToLoad = 0;
+
+loadingManager.onStart = function(url, itemsLoaded, itemsTotal) {
+    console.log('Started loading:', url);
+    totalModelsToLoad = itemsTotal;
+};
+
+loadingManager.onProgress = function(url, itemsLoaded, itemsTotal) {
+    console.log('Loading progress:', itemsLoaded + '/' + itemsTotal);
+    modelsLoaded = itemsLoaded;
+};
+
+loadingManager.onError = function(url) {
+    console.error('Error loading:', url);
+};
+
+
+const loader = new GLTFLoader(loadingManager);
 loader.load(
   '/floorWithTextures/prop.gltf',
   function (gltf) {
@@ -385,9 +519,15 @@ loader.load(
   function (gltf) {
     scene.add(gltf.scene);
     gltf.scene.position.set(0, -.01, 0);
+    let meshCount = 0;
     gltf.scene.traverse( x => {
         if (x.isMesh){
             x.material = floorMaterial;
+
+            const meshName = meshCount > 0 ? `Main Floor - Part ${meshCount + 1}` : 'Main Floor';
+            registerMesh(x, 'floor', meshName);
+            materialEditor.currentMesh = x;
+            meshCount++;
         }
     })
   },
@@ -473,12 +613,14 @@ loader.load(
     gltf.scene.position.set(-.94, 1.5, 3.935);
     gltf.scene.scale.set(1, 1, 1);
     gltf.scene.rotation.set(0, Math.PI, 0); // Rotate to face the camera
-    console.log('Wall1 model loaded successfully');
-    console.log('Model object:', gltf.scene);
+    let meshCount = 0;
         gltf.scene.traverse( x => {
         if (x.isMesh){
             x.material = wallMaterial;
-            
+
+            const meshName = meshCount > 0 ? `Wall - Part ${meshCount + 1}` : 'Wall';
+            registerMesh(x, 'wall', meshName);
+            meshCount++;
         }
     })
   },
@@ -523,12 +665,14 @@ loader.load(
     gltf.scene.position.set(7.943, 0, 0);
     gltf.scene.scale.set(1, 1, 1);
     gltf.scene.rotation.set(0, Math.PI, 0); // Rotate to face the camera
-    console.log('Wall1 model loaded successfully');
-    console.log('Model object:', gltf.scene);
+    let meshCount = 0;
         gltf.scene.traverse( x => {
         if (x.isMesh){
             x.material = wallMaterial;
-            
+
+            const meshName = meshCount > 0 ? `Wall - Part ${meshCount + 1}` : 'Wall';
+            registerMesh(x, 'wall', meshName);
+            meshCount++;
         }
     })
   },
@@ -572,12 +716,14 @@ loader.load(
     gltf.scene.position.set( -11.66, 0, 0);
     gltf.scene.scale.set(1, 1, 1);
     gltf.scene.rotation.set(0, Math.PI, 0); // Rotate to face the camera
-    console.log('Wall3 model loaded successfully');
-    console.log('Model object:', gltf.scene);
+    let meshCount = 0;
         gltf.scene.traverse( x => {
         if (x.isMesh){
             x.material = wallMaterial;
-            
+
+            const meshName = meshCount > 0 ? `Wall - Part ${meshCount + 1}` : 'Wall';
+            registerMesh(x, 'wall', meshName);
+            meshCount++;
         }
     })
   },
@@ -618,12 +764,14 @@ loader.load(
     gltf.scene.position.set( 0, 0, -0.01);
     gltf.scene.scale.set(1, 1, 1);
     gltf.scene.rotation.set(0, 0, 0); // Rotate to face the camera
-    console.log('Wall3 model loaded successfully');
-    console.log('Model object:', gltf.scene);
+    let meshCount = 0;
         gltf.scene.traverse( x => {
         if (x.isMesh){
             x.material = wallMaterial;
-            
+
+            const meshName = meshCount > 0 ? `Wall - Part ${meshCount + 1}` : 'Wall';
+            registerMesh(x, 'wall', meshName);
+            meshCount++;  
         }
     })
   },
@@ -696,62 +844,62 @@ materialsFolder.open();
 shadowsFolder.open();
 
 
-// Add to GUI
-const tilingSettings = {
-  repeatX: 4,
-  repeatY: 2,
-  autoTile: true,
-  tilesPerMeter: 1
-};
+// // Add to GUI
+// const tilingSettings = {
+//   repeatX: 4,
+//   repeatY: 2,
+//   autoTile: true,
+//   tilesPerMeter: 1
+// };
 
-const tilingFolder = gui.addFolder('Wall Textures');
+// const tilingFolder = gui.addFolder('Wall Textures');
 
-tilingFolder.add(tilingSettings, 'repeatX', 1, 20, 0.5).name('Horizontal Tiles').onChange(value => {
-  if (!tilingSettings.autoTile) {
-    setWallTextureTiling(value, tilingSettings.repeatY);
-  }
-});
+// tilingFolder.add(tilingSettings, 'repeatX', 1, 20, 0.5).name('Horizontal Tiles').onChange(value => {
+//   if (!tilingSettings.autoTile) {
+//     setWallTextureTiling(value, tilingSettings.repeatY);
+//   }
+// });
 
-tilingFolder.add(tilingSettings, 'repeatY', 1, 20, 0.5).name('Vertical Tiles').onChange(value => {
-  if (!tilingSettings.autoTile) {
-    setWallTextureTiling(tilingSettings.repeatX, value);
-  }
-});
+// tilingFolder.add(tilingSettings, 'repeatY', 1, 20, 0.5).name('Vertical Tiles').onChange(value => {
+//   if (!tilingSettings.autoTile) {
+//     setWallTextureTiling(tilingSettings.repeatX, value);
+//   }
+// });
 
-tilingFolder.add(tilingSettings, 'autoTile').name('Auto-Tile Based on Size');
-tilingFolder.add(tilingSettings, 'tilesPerMeter', 0.1, 5, 0.1).name('Tiles Per Meter').onChange(value => {
-  if (tilingSettings.autoTile) {
-    // Re-apply auto tiling to all wall meshes
-    scene.traverse(object => {
-      if (object.isMesh && object.material === wallMaterial) {
-        setupWallTextureTiling(object, value);
-      }
-    });
-  }
-});
+// tilingFolder.add(tilingSettings, 'autoTile').name('Auto-Tile Based on Size');
+// tilingFolder.add(tilingSettings, 'tilesPerMeter', 0.1, 5, 0.1).name('Tiles Per Meter').onChange(value => {
+//   if (tilingSettings.autoTile) {
+//     // Re-apply auto tiling to all wall meshes
+//     scene.traverse(object => {
+//       if (object.isMesh && object.material === wallMaterial) {
+//         setupWallTextureTiling(object, value);
+//       }
+//     });
+//   }
+// });
 
-tilingFolder.open();
+// tilingFolder.open();
 
-// Function to set up wall texture tiling based on wall dimensions
-function setupWallTextureTiling(wallMesh, tilesPerMeter = 1) {
-  if (!tilingSettings.autoTile) return;
+// // Function to set up wall texture tiling based on wall dimensions
+// function setupWallTextureTiling(wallMesh, tilesPerMeter = 1) {
+//   if (!tilingSettings.autoTile) return;
   
-  // Get the size of the wall
-  const bbox = new THREE.Box3().setFromObject(wallMesh);
-  const size = new THREE.Vector3();
-  bbox.getSize(size);
+//   // Get the size of the wall
+//   const bbox = new THREE.Box3().setFromObject(wallMesh);
+//   const size = new THREE.Vector3();
+//   bbox.getSize(size);
   
-  // Calculate how many tiles to apply
-  const repeatX = Math.max(1, Math.round(size.x * tilesPerMeter));
-  const repeatY = Math.max(1, Math.round(size.y * tilesPerMeter));
+//   // Calculate how many tiles to apply
+//   const repeatX = Math.max(1, Math.round(size.x * tilesPerMeter));
+//   const repeatY = Math.max(1, Math.round(size.y * tilesPerMeter));
   
-  // Apply to textures
-  setWallTextureTiling(repeatX, repeatY);
+//   // Apply to textures
+//   setWallTextureTiling(repeatX, repeatY);
   
-  // Update the UI
-  tilingSettings.repeatX = repeatX;
-  tilingSettings.repeatY = repeatY;
-}
+//   // Update the UI
+//   tilingSettings.repeatX = repeatX;
+//   tilingSettings.repeatY = repeatY;
+// }
 
 
 
@@ -1055,8 +1203,263 @@ ssrFolder.add(ssrSettings, 'groundReflector').name('Ground Reflector').onChange(
 
 ssrFolder.open();
 
+// === Material Editor Settings ===
+
+
+
+const materialEditorFolder = gui.addFolder('Material Editor');
+
+// Material preset selector
+const materialOptions = {
+    'tile1': materialPresets.tile1.name,
+    'tile2': materialPresets.tile2.name,
+};
+
+
+materialEditorFolder.add(materialEditor, 'selectedMaterial', materialOptions)
+    .name('Material Type')
+    .onChange(value => {
+        // if (!materialEditor.currentMesh) {
+        //     alert('Please select a surface first!');
+        //     return;
+        // }
+        
+        // // Apply new material
+        // applyMaterialToMesh(materialEditor.currentMesh, value);
+        // updateMaterialControls();
+        console.log('Material options:', materialOptions, value);
+    });
+
+
+const surfaceOptions = {
+    'none': 'Select a surface...'
+};
+
+function updateSurfaceDropdown() {
+    // Add walls
+    meshRegistry.walls.forEach((entry, index) => {
+        surfaceOptions[`wall_${index}`] = `wall_${index}`;
+    });
+    
+    // Add floors
+    meshRegistry.floors.forEach((entry, index) => {
+        surfaceOptions[`floor_${index}`] = `floor_${index}`;
+    });
+
+    console.log('Mesh registry:', meshRegistry);
+    console.log('Updated surface options:', surfaceOptions);
+}
+
+// Surface controller
+let surfaceController = null;
+
+function createSurfaceController() {
+    // Remove old controller if it exists
+    if (surfaceController) {
+        materialEditorFolder.remove(surfaceController);
+    }
+    
+    // Create new controller with updated options
+    surfaceController = materialEditorFolder.add(materialEditor, 'selectedSurface', surfaceOptions)
+        .name('Select Surface')
+        .onChange(value => {
+            console.log('Selected surface:', value);
+            
+            if (value === 'none') {
+                materialEditor.currentMesh = null;
+                return;
+            }
+            
+            // Parse the selection
+            const [type, index] = value.split('_');
+            console.log('Value = ', value, '/ parsed type:', type, 'index:', index);
+            console.log('type:', type, 'index:', index);
+            let meshEntry;
+            
+            if (type === 'wall') {
+                meshEntry = meshRegistry.walls[parseInt(index)];
+            } else if (type === 'floor') {
+                meshEntry = meshRegistry.floors[parseInt(index)];
+            }
+            
+            console.log('Found mesh entry:', meshEntry);
+            
+            if (meshEntry && meshEntry.mesh) {
+                materialEditor.currentMesh = meshEntry.mesh;
+                
+                // Update GUI values based on current material
+                if (meshEntry.mesh.material) {
+                    // Update preset if it exists
+                    if (meshEntry.mesh.material.userData && meshEntry.mesh.material.userData.preset) {
+                        materialEditor.selectedMaterial = meshEntry.mesh.material.userData.preset;
+                    }
+                    
+                    // Update color
+                    if (meshEntry.mesh.material.color) {
+                        materialEditor.color = meshEntry.mesh.material.color.getHex();
+                    }
+                    
+                    // Update tiling from the material's map texture
+                    if (meshEntry.mesh.material.map) {
+                        materialEditor.tiling.x = meshEntry.mesh.material.map.repeat.x;
+                        materialEditor.tiling.y = meshEntry.mesh.material.map.repeat.y;
+                        materialEditor.tiling.rotation = meshEntry.mesh.material.map.rotation || 0;
+                    }
+                }
+                
+                // Update controllers
+                updateMaterialControls();
+            }
+            else {
+                console.error('Mesh entry not found or invalid');
+            }
+        });
+}
+
+createSurfaceController();
+
+
+
+
+
+
+
+
+
+
+
+const colorController = materialEditorFolder.addColor(materialEditor, 'color')
+    .name('Color')
+    .onChange(value => {
+        if (materialEditor.currentMesh && materialEditor.currentMesh.material) {
+            materialEditor.currentMesh.material.color.setHex(value);
+        }
+    });
+
+
+const tilingFolder = materialEditorFolder.addFolder('Texture Tiling');
+
+const tilingXController = tilingFolder.add(materialEditor.tiling, 'x', 0.1, 20, 0.1)
+    .name('Tiling X')
+    .onChange(updateTextureTiling);
+
+const tilingYController = tilingFolder.add(materialEditor.tiling, 'y', 0.1, 20, 0.1)
+    .name('Tiling Y')
+    .onChange(updateTextureTiling);
+
+const rotationController = tilingFolder.add(materialEditor.tiling, 'rotation', 0, Math.PI * 2, 0.01)
+    .name('Rotation')
+    .onChange(updateTextureTiling);
+
+// // Reset button
+// materialEditorFolder.add({
+//     resetMaterial: function() {
+//         if (materialEditor.currentMesh) {
+//             const entry = findMeshEntry(materialEditor.currentMesh);
+//             if (entry && entry.originalMaterial) {
+//                 materialEditor.currentMesh.material = entry.originalMaterial.clone();
+//                 updateMaterialControls();
+//             }
+//         }
+//     }
+// }, 'resetMaterial').name('Reset to Original');
+
+
+
+// // Helper functions
+// function applyMaterialToMesh(mesh, presetKey) {
+//     const newMaterial = createMaterialFromPreset(presetKey, materialEditor.color);
+    
+//     // Apply current tiling settings
+//     if (newMaterial.userData.textures) {
+//         Object.values(newMaterial.userData.textures).forEach(texture => {
+//             texture.repeat.set(materialEditor.tiling.x, materialEditor.tiling.y);
+//             texture.rotation = materialEditor.tiling.rotation;
+//             texture.wrapS = THREE.RepeatWrapping;
+//             texture.wrapT = THREE.RepeatWrapping;
+//             texture.center.set(0.5, 0.5);
+//         });
+//     }
+    
+//     // Preserve the original material reference
+//     const entry = findMeshEntry(mesh);
+//     if (entry && !entry.originalMaterial && mesh.material) {
+//         entry.originalMaterial = mesh.material.clone();
+//     }
+    
+//     mesh.material = newMaterial;
+//     mesh.material.needsUpdate = true;
+// }
+
+function updateTextureTiling() {
+    if (!materialEditor.currentMesh || !materialEditor.currentMesh.material) return;
+    
+    const material = materialEditor.currentMesh.material;
+    
+    // Update all texture properties
+    const texturesToUpdate = [
+        material.map,
+        material.normalMap,
+        material.roughnessMap,
+        material.aoMap,
+        material.displacementMap
+    ];
+    
+    texturesToUpdate.forEach(texture => {
+        if (texture) {
+            texture.repeat.set(materialEditor.tiling.x, materialEditor.tiling.y);
+            texture.rotation = materialEditor.tiling.rotation;
+            texture.center.set(0.5, 0.5);
+            texture.needsUpdate = true;
+        }
+    });
+    
+    // Also update userData textures if they exist
+    if (material.userData && material.userData.textures) {
+        Object.values(material.userData.textures).forEach(texture => {
+            texture.repeat.set(materialEditor.tiling.x, materialEditor.tiling.y);
+            texture.rotation = materialEditor.tiling.rotation;
+            texture.center.set(0.5, 0.5);
+            texture.needsUpdate = true;
+        });
+    }
+    
+    material.needsUpdate = true;
+}
+
+
+function updateMaterialControls() {
+    if (!materialEditor.currentMesh) return;
+    
+    const material = materialEditor.currentMesh.material;
+    
+    // Update tiling values if textures exist
+    if (material.map) {
+        materialEditor.tiling.x = material.map.repeat.x;
+        materialEditor.tiling.y = material.map.repeat.y;
+        materialEditor.tiling.rotation = material.map.rotation || 0;
+    }
+    
+    // Update GUI displays
+    tilingXController.updateDisplay();
+    tilingYController.updateDisplay();
+    rotationController.updateDisplay();
+    // colorController.updateDisplay();
+}
+
+// function findMeshEntry(mesh) {
+//     const allEntries = [...meshRegistry.walls, ...meshRegistry.floors, ...meshRegistry.ceilings];
+//     return allEntries.find(entry => entry.mesh === mesh);
+// }
+
+// // Open folders
+// materialEditorFolder.open();
+// tilingFolder.open();
+
 
 // === Animation Loop ===
+
+console.log('meshRegistry', meshRegistry);
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
@@ -1066,4 +1469,3 @@ function animate() {
     composer.render();
 }
 animate();
-
