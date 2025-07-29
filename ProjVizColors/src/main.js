@@ -1,3 +1,8 @@
+import './style.css';
+import './loader.css';
+import './loader.js';
+
+
 import * as THREE from 'three';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -13,6 +18,7 @@ import { SSRPass } from 'three/examples/jsm/postprocessing/SSRPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ReflectorForSSRPass } from 'three/examples/jsm/objects/ReflectorForSSRPass.js';
 import { ACESFilmicToneMapping } from 'three';
+import { createLoader, setupLoadingManager } from './loader.js';
 
 //stat setup
 const stats = new Stats();
@@ -40,11 +46,55 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; // Optional, for smooth interaction
 
 
+// loader setup
+const loaderElements = createLoader();
+
+const loadingManager = new THREE.LoadingManager();
+
+setupLoadingManager(loadingManager, loaderElements, {
+    onComplete: () => {
+        // Start animation loop only after loading
+        animate();
+        
+        // Update GUI after everything is loaded
+        updateSurfaceDropdown();
+        createSurfaceController();
+    }
+});
+
+// loading manager settings
+let modelsLoaded = 0;
+
+// loadingManager.onLoad = function() {
+//     console.log('All models loaded!');
+//     updateSurfaceDropdown();
+//     createSurfaceController();
+// };
+
+
+
+let totalModelsToLoad = 0;
+
+loadingManager.onStart = function(url, itemsLoaded, itemsTotal) {
+    console.log('Started loading:', url);
+    totalModelsToLoad = itemsTotal;
+};
+
+loadingManager.onProgress = function(url, itemsLoaded, itemsTotal) {
+    console.log('Loading progress:', itemsLoaded + '/' + itemsTotal);
+    modelsLoaded = itemsLoaded;
+};
+
+loadingManager.onError = function(url) {
+    console.error('Error loading:', url);
+};
+
+
 // === HDR Environment Map ===
 const pmremGenerator = new THREE.PMREMGenerator(renderer);
 pmremGenerator.compileEquirectangularShader();
 
-new RGBELoader()
+new RGBELoader(loadingManager)
 .setPath('/textures/') // adjust to your folder name!
 .load('je_gray.hdr', function(texture) {
 const envMap = pmremGenerator.fromEquirectangular(texture).texture;
@@ -298,7 +348,7 @@ function createMaterialFromPreset(presetKey, color = 0xffffff) {
 
 // === Load Shadow Texture ===
 // === Comprehensive Texture Debugging ===
-const textureLoader = new THREE.TextureLoader();
+const textureLoader = new THREE.TextureLoader(loadingManager);
 
 // 1. Basic texture loading with all callbacks
 const floorShadowTexture = textureLoader.load(
@@ -543,33 +593,7 @@ const materialEditor = {
 
 
 
-const loadingManager = new THREE.LoadingManager();
-let modelsLoaded = 0;
-const totalModels = 5; // Adjust based on your actual model count
 
-loadingManager.onLoad = function() {
-    console.log('All models loaded!');
-    updateSurfaceDropdown();
-    createSurfaceController();
-};
-
-
-
-let totalModelsToLoad = 0;
-
-loadingManager.onStart = function(url, itemsLoaded, itemsTotal) {
-    console.log('Started loading:', url);
-    totalModelsToLoad = itemsTotal;
-};
-
-loadingManager.onProgress = function(url, itemsLoaded, itemsTotal) {
-    console.log('Loading progress:', itemsLoaded + '/' + itemsTotal);
-    modelsLoaded = itemsLoaded;
-};
-
-loadingManager.onError = function(url) {
-    console.error('Error loading:', url);
-};
 
 
 const loader = new GLTFLoader(loadingManager);
@@ -1565,4 +1589,4 @@ function animate() {
 
     stats.end();
 }
-animate();
+// animate();
