@@ -182,6 +182,69 @@ const materialPresets = {
     }
 };
 
+let customTextureCounter = 0;
+
+function createCustomMaterial(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const textureUrl = e.target.result;
+            
+            // Create a unique key for this custom material
+            const customKey = `custom_${customTextureCounter++}`;
+            
+            // Load the custom texture
+            const customDiffuse = textureLoader.load(textureUrl);
+            
+            // Load other textures from tile3 preset
+            const tile3Preset = materialPresets.tile3;
+            const loadedTextures = {
+                diffuse: customDiffuse,
+                normal: textureLoader.load(tile3Preset.textures.normal),
+                roughness: textureLoader.load(tile3Preset.textures.roughness),
+                displacement: textureLoader.load(tile3Preset.textures.displacement),
+                ao: textureLoader.load(tile3Preset.textures.ao)
+            };
+            
+            // Create material using tile3 settings
+            const material = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                map: loadedTextures.diffuse,
+                normalMap: loadedTextures.normal,
+                roughnessMap: loadedTextures.roughness,
+                displacementMap: loadedTextures.displacement,
+                aoMap: loadedTextures.ao,
+                displacementScale: 0.01,
+                aoMapIntensity: 1.0,
+                roughness: 0.8,
+                metalness: 0.1,
+                side: THREE.DoubleSide,
+                envMapIntensity: 0.01
+            });
+            
+            // Store textures reference in material
+            material.userData.textures = loadedTextures;
+            material.userData.preset = customKey;
+            material.userData.customTexture = true;
+            material.userData.textureName = file.name;
+            
+            // Apply current tiling settings
+            Object.values(loadedTextures).forEach(texture => {
+                texture.repeat.set(materialEditor.tiling.x, materialEditor.tiling.y);
+                texture.rotation = materialEditor.tiling.rotation;
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.center.set(0.5, 0.5);
+            });
+            
+            resolve(material);
+        };
+        
+        reader.readAsDataURL(file);
+    });
+}
+
 // Function to create material from preset
 function createMaterialFromPreset(presetKey, color = 0xffffff) {
     const preset = materialPresets[presetKey];
@@ -1254,6 +1317,16 @@ const materialOptions = {
     'Floral': 'tile5',
 };
 
+const customTextureInfo = {
+    currentTexture: 'None'
+};
+
+const customTextureDisplay = materialEditorFolder.add(customTextureInfo, 'currentTexture')
+    .name('Custom Texture')
+    .listen();
+customTextureDisplay.domElement.style.pointerEvents = 'none';
+
+
 
 materialEditorFolder.add(materialEditor, 'selectedMaterial', materialOptions)
     .name('Material Type')
@@ -1270,6 +1343,56 @@ materialEditorFolder.add(materialEditor, 'selectedMaterial', materialOptions)
         console.log('Material options:', materialOptions, value);
     });
 
+
+
+const fileInputHandler = {
+    uploadTexture: function() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        
+        input.onchange = async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!materialEditor.currentMesh) {
+                alert('Please select a surface first!');
+                return;
+            }
+            
+            // Check if it's an image
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file!');
+                return;
+            }
+            
+            try {
+                // Create custom material
+                const customMaterial = await createCustomMaterial(file);
+                
+                // Apply to current mesh
+                materialEditor.currentMesh.material = customMaterial;
+                materialEditor.currentMesh.material.needsUpdate = true;
+                
+                // Update material editor state
+                materialEditor.selectedMaterial = 'custom';
+                
+                // Update GUI
+                updateMaterialControls();
+                
+                console.log('Custom texture applied:', file.name);
+            } catch (error) {
+                console.error('Error loading custom texture:', error);
+                alert('Error loading texture. Please try again.');
+            }
+        };
+        
+        input.click();
+    }
+};
+
+
+materialEditorFolder.add(fileInputHandler, 'uploadTexture').name('📁 Upload Custom Texture');
 
 const surfaceOptions = {
     'none': 'Select a surface...'
@@ -1403,6 +1526,14 @@ const rotationController = tilingFolder.add(materialEditor.tiling, 'rotation', 0
 
 // // Helper functions
 function applyMaterialToMesh(mesh, presetKey) {
+    // Check if we should keep the current custom material
+    if (presetKey === 'custom' && mesh.material && mesh.material.userData.customTexture) {
+        // Keep the existing custom material, just update tiling
+        updateTextureTiling();
+        return;
+    }
+    
+    // Otherwise create new material from preset
     const newMaterial = createMaterialFromPreset(presetKey, materialEditor.color);
     
     // Apply current tiling settings
@@ -1480,6 +1611,15 @@ function updateMaterialControls() {
     tilingYController.updateDisplay();
     rotationController.updateDisplay();
     // colorController.updateDisplay();
+
+
+        if (materialEditor.currentMesh && 
+        materialEditor.currentMesh.material && 
+        materialEditor.currentMesh.material.userData.customTexture) {
+        customTextureInfo.currentTexture = materialEditor.currentMesh.material.userData.textureName || 'Custom';
+    } else {
+        customTextureInfo.currentTexture = 'None';
+    }
 }
 
 function findMeshEntry(mesh) {
