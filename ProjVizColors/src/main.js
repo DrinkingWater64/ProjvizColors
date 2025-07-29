@@ -134,7 +134,7 @@ const materialPresets = {
             displacement: '/floor/diagonal_parquet_disp_1k.png',
             ao: '/floor/diagonal_parquet_ao_1k.png'
         },
-        defaultTiling: { x: 4, y: 2 }
+        defaultTiling: { x: 4, y: 4 }
     },
     tile2: {
         name: 'Beige Wall',
@@ -145,7 +145,40 @@ const materialPresets = {
             displacement: '/beige_wall/textures/beige_wall_001_disp_1k.jpg',
             ao: '/beige_wall/textures/beige_wall_001_ao_1k.jpg'
         },
-        defaultTiling: { x: 4, y: 2 }
+        defaultTiling: { x: 4, y: 4 }
+    },
+    tile3: {
+        name: 'Ceramic Tile',
+        textures: {
+            diffuse: '/tile3png/tile3.png',
+            normal: '/tile3png/tile3Normal.png',
+            roughness: '/tile3png/tile3smoothness.png',
+            displacement: '/tile3png/tile3Displacement.png',
+            ao: '/tile3png/tile3Ao.png'
+        },
+        defaultTiling: { x: 4, y: 4 }
+    },
+    tile4: {
+            name: 'Plaster Tile',
+        textures: {
+            diffuse: '/tile4png/tile4.png',
+            normal: '/tile4png/tile4Normal.png',
+            roughness: '/tile4png/tile4Smoothness.png',
+            displacement: '/tile4png/tile4Height.png',
+            ao: '/tile4png/tile4Ao.png'
+        },
+        defaultTiling: { x: 4, y: 4 }
+    },
+    tile5: {
+        name: 'Floral Tile',
+        textures: {
+            diffuse: '/tile1png/tile1.png',
+            normal: '/tile1png/tile1Normal.png',
+            roughness: '/tile1png/tile1Smoothness.png',
+            displacement: '/tile1png/tile1HeightMap.png',
+            ao: '/tile1png/tile1Ao.png'
+        },
+        defaultTiling: { x: 4, y: 4 }
     }
 };
 
@@ -422,7 +455,7 @@ const wall4ShadowMaterial = new THREE.MeshStandardMaterial({
 
 const materialEditor = {
     selectedSurface: 'none',
-    selectedMaterial: 'tile1',
+    selectedMaterial: 'none',
     color: 0xffffff,
     tiling: {
         x: 4,
@@ -520,7 +553,7 @@ loader.load(
   'models/floorShadow.glb', // Path relative to the public folder
   function (gltf) {
     scene.add(gltf.scene);
-    gltf.scene.position.set(0, -.01, 0);
+    gltf.scene.position.set(0, -.02, 0);
     let meshCount = 0;
     gltf.scene.traverse( x => {
         if (x.isMesh){
@@ -1213,8 +1246,12 @@ const materialEditorFolder = gui.addFolder('Material Editor');
 
 // Material preset selector
 const materialOptions = {
+    'None': 'none',
     'Wood': 'tile1',
     'Biege': 'tile2',
+    'Ceramic': 'tile3',
+    'Plaster': 'tile4',
+    'Floral': 'tile5',
 };
 
 
