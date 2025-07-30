@@ -17,6 +17,9 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { SSRPass } from 'three/examples/jsm/postprocessing/SSRPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ReflectorForSSRPass } from 'three/examples/jsm/objects/ReflectorForSSRPass.js';
+import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
+import { TAARenderPass } from 'three/addons/postprocessing/TAARenderPass.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ACESFilmicToneMapping } from 'three';
 import { createLoader, setupLoadingManager } from './loader.js';
 
@@ -30,12 +33,20 @@ stats.dom.style.top = '0px';
 stats.dom.style.left = '0px';
 
 
+let frameIndex = 0;
+
 // === Scene Setup ===
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({
+   antialias: true,
+   powerPreference: "high-performance"
+});
+
+renderer.setPixelRatio(window.devicePixelRatio); // Temporary high-quality render
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.physicallyCorrectLights = true;
@@ -113,10 +124,10 @@ const ssrPass = new SSRPass({
 });
 
 // Configure SSR settings
-ssrPass.thickness = 0.18;  // Scale up from 0.018
+ssrPass.thickness = 0.18;
 ssrPass.infiniteThick = false;
-ssrPass.maxDistance = 1.0;  // Not 0.1, but not 10 either
-ssrPass.opacity = 1;
+ssrPass.maxDistance = .15;
+ssrPass.opacity = .38;
 ssrPass.fresnel = true;
 ssrPass.distanceAttenuation = true;
 ssrPass.bouncing = true;
@@ -130,8 +141,20 @@ ssrPass.blur = true;
 ssrPass.groundReflector = groundReflector;
 
 
-
+let taaRenderPass = new TAARenderPass( scene, camera );
+taaRenderPass.unbiased = false;
+taaRenderPass.sampleLevel = 16  ;
+taaRenderPass.enabled = true; // Disable TAA by default
 composer.addPass(ssrPass);
+
+const smaaPass = new SMAAPass(window.innerWidth, window.innerHeight);
+composer.addPass(taaRenderPass);
+// composer.addPass(smaaPass);
+
+let renderPass = new RenderPass( scene, camera );
+renderPass.enabled = false;
+composer.addPass( renderPass );
+
 composer.addPass(new OutputPass());
 
 // mesh registry
@@ -588,9 +611,18 @@ loader.load(
           }
         });
       }
+      if (child.material && child.material.map) {
+        console.log('Texture found:', child.material.map);
+        console.log('Model loaded successfully#######################################################################################################');
+        child.material.map.anisotropy = renderer.capabilities.getMaxAnisotropy(); // Set anisotropy for better texture quality
+        child.material.map.minFilter = THREE.LinearMipmapLinearFilter;
+        child.material.map.magFilter = THREE.LinearFilter;
+        child.material.map.generateMipmaps = true;
+
+      }
     });
 
-    console.log('Model loaded successfully#######################################################################################################');
+    console.log('Model loaded successfully');
     console.log('Model object:', gltf.scene);
     console.log('selects', ssrPass.selects);
   },
@@ -746,7 +778,7 @@ loader.load(
   'floorWithTextures/wall2shadow.gltf', // Path relative to the public folder
   function (gltf) {
     scene.add(gltf.scene);
-    gltf.scene.position.set(7.94, 0, 0);
+    gltf.scene.position.set(7.87, 0, 0);
     gltf.scene.scale.set(1, 1, 1);
     gltf.scene.rotation.set(0, Math.PI, 0); // Rotate to face the camera
     console.log('Wall1 model loaded successfully');
@@ -770,7 +802,7 @@ loader.load(
   'models/wall2.gltf', // Path relative to the public folder
   function (gltf) {
     scene.add(gltf.scene);
-    gltf.scene.position.set(7.943, 0, 0);
+    gltf.scene.position.set(7.88, 0, 0);
     gltf.scene.scale.set(1, 1, 1);
     gltf.scene.rotation.set(0, Math.PI, 0); // Rotate to face the camera
     let meshCount = 0;
@@ -912,6 +944,11 @@ window.addEventListener( 'resize', () => {
         groundReflector.getRenderTarget().setSize(window.innerWidth, window.innerHeight);
         groundReflector.resolution.set(window.innerWidth, window.innerHeight);
     }
+
+    //     // Update SMAA pass
+    // if (smaaPass) {
+    //     smaaPass.setSize(window.innerWidth, window.innerHeight);
+    // }
 });
 
 
@@ -1554,6 +1591,21 @@ console.log('meshRegistry', meshRegistry);
 function animate() {
     stats.begin();
     requestAnimationFrame(animate);
+    frameIndex++;
+    
+    // Control TAA accumulation based on camera movement
+    const cameraIsMoving = controls.enabled && 
+        (Math.abs(controls.getAzimuthalAngle() - (controls.lastAzimuth || 0)) > 0.001 ||
+         Math.abs(controls.getPolarAngle() - (controls.lastPolar || 0)) > 0.001);
+    
+    if (cameraIsMoving) {
+        taaRenderPass.accumulate = false;
+        controls.lastAzimuth = controls.getAzimuthalAngle();
+        controls.lastPolar = controls.getPolarAngle();
+    } else {
+        taaRenderPass.accumulate = true;
+    }
+    
     controls.update();
     camera.position.y = Math.max(0.5, Math.min(3.5, camera.position.y));
     camera.position.x = Math.max(-3.5, Math.min(5.5, camera.position.x));
