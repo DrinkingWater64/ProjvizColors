@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  projvizcolors:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount the public folder for development (optional)
+      - ./ProjVizColors/public:/app/public:ro
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped 

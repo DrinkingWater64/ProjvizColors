@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  projvizcolors-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      # Mount source code for hot reloading
+      - ./ProjVizColors/src:/app/src
+      - ./ProjVizColors/public:/app/public
+      - ./ProjVizColors/index.html:/app/index.html
+      - ./ProjVizColors/package.json:/app/package.json
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped 
