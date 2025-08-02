@@ -1571,9 +1571,9 @@ function animate() {
     stats.begin();
     requestAnimationFrame(animate);
     controls.update();
-    camera.position.y = Math.max(0.5, Math.min(3.5, camera.position.y));
-    camera.position.x = Math.max(-3.5, Math.min(5.5, camera.position.x));
-    camera.position.z = Math.max(-3.5, Math.min(3.5, camera.position.z));
+    camera.position.y = Math.max(0.4, Math.min(3.4, camera.position.y));
+    camera.position.x = Math.max(-3.3, Math.min(5.3, camera.position.x));
+    camera.position.z = Math.max(-3.3, Math.min(3.3, camera.position.z));
     composer.render();
 
     stats.end();
