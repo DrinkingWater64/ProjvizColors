@@ -32,7 +32,7 @@ stats.dom.style.left = '0px';
 
 // === Scene Setup ===
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -44,7 +44,23 @@ document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; // Optional, for smooth interaction
+const cameraSpeedSettings = {
+    rotateSpeed: .5,      // Rotation speed
+    zoomSpeed: 2.5,        // Zoom speed
+    panSpeed: 1.5,         // Pan speed
+    enableDamping: true,   // Smooth movement
+    dampingFactor: 0.05,   // Damping strength
+    autoRotate: false,     // Auto rotation
+    autoRotateSpeed: 2.0   // Auto rotate speed
+};
 
+controls.rotateSpeed = cameraSpeedSettings.rotateSpeed;
+controls.zoomSpeed = cameraSpeedSettings.zoomSpeed;
+controls.panSpeed = cameraSpeedSettings.panSpeed;
+controls.enableDamping = cameraSpeedSettings.enableDamping;
+controls.dampingFactor = cameraSpeedSettings.dampingFactor;
+controls.autoRotate = cameraSpeedSettings.autoRotate;
+controls.autoRotateSpeed = cameraSpeedSettings.autoRotateSpeed;
 
 // loader setup
 const loaderElements = createLoader();
